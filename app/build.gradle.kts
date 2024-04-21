@@ -243,6 +243,9 @@ dependencies {
     implementation(libs.compose.coil)
     implementation(libs.compose.lazyColumnScrollbar)
 
+    // Zip4J
+    implementation(libs.zip4j)
+
     // Networking
     implementation(libs.okhttp)
     implementation(libs.okhttp.interceptor.brotli)

@@ -6,6 +6,7 @@
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+	<uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
 	<uses-permission
 		android:name="android.permission.READ_EXTERNAL_STORAGE"
 		android:maxSdkVersion="32"
@@ -16,7 +17,13 @@
 		/>
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
+	<queries>
+		<intent>
+			<action android:name="android.intent.action.TTS_SERVICE" />
+		</intent>
+	</queries>
 
 	<application
 		android:name=".App"
@@ -63,14 +70,17 @@
 
 		<service
 			android:name=".services.BackupDataService"
+			android:foregroundServiceType="dataSync"
 			android:exported="false"
 			/>
 		<service
 			android:name=".services.RestoreDataService"
+			android:foregroundServiceType="dataSync"
 			android:exported="false"
 			/>
 		<service
 			android:name=".services.EpubImportService"
+			android:foregroundServiceType="dataSync"
 			android:exported="false"
 			/>
 		<service

@@ -26,10 +26,17 @@ class App : Application(), ImageLoaderFactory, Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
         periodicWorkersInitializer.init()
+    }
+
+    companion object {
+        @get:Synchronized
+        lateinit var instance: App
+            private set
     }
 
     override fun newImageLoader(): ImageLoader = when (val networkClient = networkClient) {

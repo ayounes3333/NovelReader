@@ -28,13 +28,22 @@ class LibraryPageViewModel @Inject constructor(
     private val toasty: Toasty,
     private val workManager: WorkManager
 ) : BaseViewModel() {
-    var isPullRefreshing by mutableStateOf(false)
-    val listReading by createPageList(isShowCompleted = false)
-    val listCompleted by createPageList(isShowCompleted = true)
+    enum class LibraryListType {
+        FAVORITES, RECENT
+    }
 
-    private fun createPageList(isShowCompleted: Boolean) = appRepository.libraryBooks
+    var isPullRefreshing by mutableStateOf(false)
+    val listFavorites by createPageList(LibraryListType.FAVORITES)
+    val listRecent by createPageList(LibraryListType.RECENT)
+
+    private fun createPageList(type: LibraryListType) = appRepository.libraryBooks
         .getBooksInLibraryWithContextFlow
-        .map { it.filter { book -> book.book.completed == isShowCompleted } }
+        .map { it.filter { book ->
+            if (type == LibraryListType.FAVORITES)
+                book.book.inLibrary
+            else
+                true
+        } }
         .combine(preferences.LIBRARY_FILTER_READ.flow()) { list, filterRead ->
             when (filterRead) {
                 AppPreferences.TERNARY_STATE.active -> list.filter { it.chaptersCount == it.chaptersReadCount }

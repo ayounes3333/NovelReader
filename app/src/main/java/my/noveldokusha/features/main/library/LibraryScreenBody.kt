@@ -1,5 +1,6 @@
 package my.noveldokusha.features.main.library
 
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -42,12 +43,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
+import my.noveldokusha.App
 import my.noveldokusha.R
 import my.noveldokusha.data.BookWithContext
 import my.noveldokusha.data.LibraryCategory
 import my.noveldokusha.isLocalUri
 import my.noveldokusha.repository.rememberResolvedBookImagePath
+import my.noveldokusha.services.EpubImportService
 import my.noveldokusha.ui.bounceOnPressed
+import my.noveldokusha.ui.browse.view.BrowseScreen
+import my.noveldokusha.ui.browse.viewmodel.BrowseViewModel
 import my.noveldokusha.ui.composeViews.BookImageButtonView
 import my.noveldokusha.ui.composeViews.CollapsibleDivider
 import my.noveldokusha.ui.theme.ColorAccent
@@ -65,7 +70,8 @@ fun LibraryScreenBody(
     topAppBarState: TopAppBarState,
     onBookClick: (BookWithContext) -> Unit,
     onBookLongClick: (BookWithContext) -> Unit,
-    viewModel: LibraryPageViewModel = viewModel()
+    viewModel: LibraryPageViewModel = viewModel(),
+    browseViewModel: BrowseViewModel = viewModel()
 ) {
     val tabsSizeUpdated = rememberUpdatedState(newValue = tabs.size)
 
@@ -133,17 +139,32 @@ fun LibraryScreenBody(
                 }
                 val list: List<BookWithContext> by remember {
                     derivedStateOf {
-                        when (showCompleted) {
-                            true -> viewModel.listCompleted
-                            else -> viewModel.listReading
+                        when (page) {
+                            1 -> viewModel.listFavorites
+                            2 -> viewModel.listRecent
+                            else -> emptyList()
                         }
                     }
                 }
-                LibraryPageBody(
-                    list = list,
-                    onClick = onBookClick,
-                    onLongClick = onBookLongClick
-                )
+                if (page == 0) {
+                    BrowseScreen(
+                        viewModel = browseViewModel,
+                        onBookClick = { file ->
+                            if (file.extension.lowercase().contains("epub"))
+                                EpubImportService.start(
+                                    ctx = App.instance,
+                                    uri = Uri.fromFile(file),
+                                    openAfterImporting = true
+                                )
+                        }
+                    )
+                } else {
+                    LibraryPageBody(
+                        list = list,
+                        onClick = onBookClick,
+                        onLongClick = onBookLongClick
+                    )
+                }
             }
         }
         PullRefreshIndicator(

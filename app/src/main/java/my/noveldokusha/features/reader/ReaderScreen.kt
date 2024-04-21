@@ -20,7 +20,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.outlined.ColorLens
-import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Divider
@@ -35,6 +34,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +55,7 @@ import my.noveldokusha.features.reader.ReaderScreenState.Settings.Type
 import my.noveldokusha.features.reader.features.LiveTranslationSettingData
 import my.noveldokusha.features.reader.features.TextSynthesis
 import my.noveldokusha.features.reader.features.TextToSpeechSettingData
+import my.noveldokusha.features.reader.settingDialogs.VoiceReaderDialog
 import my.noveldokusha.tools.TranslationModelState
 import my.noveldokusha.tools.Utterance
 import my.noveldokusha.tools.VoiceData
@@ -113,6 +115,30 @@ fun ReaderScreen(
                                 }
                             },
                             actions = {
+                                val toggleOrSet = { type: Type ->
+                                    state.settings.selectedSetting.value = when (state.settings.selectedSetting.value) {
+                                        type -> Type.None
+                                        else -> type
+                                    }
+                                }
+                                if (state.settings.liveTranslation.isAvailable) ActionIconItem(
+                                    settingType = Type.LiveTranslation,
+                                    textId = R.string.translator,
+                                    icon = Icons.Outlined.Translate,
+                                    onClick = toggleOrSet,
+                                )
+                                ActionIconItem(
+                                    settingType = Type.TextToSpeech,
+                                    textId = R.string.voice_reader,
+                                    icon = Icons.Filled.RecordVoiceOver,
+                                    onClick = toggleOrSet,
+                                )
+                                ActionIconItem(
+                                    settingType = Type.Style,
+                                    textId = R.string.style,
+                                    icon = Icons.Outlined.ColorLens,
+                                    onClick = toggleOrSet,
+                                )
                                 IconButton(onClick = onOpenChapterInWeb) {
                                     Icon(Icons.Filled.Public, null)
                                 }
@@ -146,13 +172,6 @@ fun ReaderScreen(
         },
         content = readerContent,
         bottomBar = {
-
-            val toggleOrSet = { type: Type ->
-                state.settings.selectedSetting.value = when (state.settings.selectedSetting.value) {
-                    type -> Type.None
-                    else -> type
-                }
-            }
             AnimatedVisibility(
                 visible = state.showReaderInfo.value,
                 enter = expandVertically(initialHeight = { 0 }) + fadeIn(),
@@ -176,36 +195,8 @@ fun ReaderScreen(
                                 topEnd = 16.dp
                             )
                         ),
-                        containerColor = MaterialTheme.colorApp.tintedSurface,
                     ) {
-                        if (state.settings.liveTranslation.isAvailable) SettingIconItem(
-                            currentType = state.settings.selectedSetting.value,
-                            settingType = Type.LiveTranslation,
-                            onClick = toggleOrSet,
-                            icon = Icons.Outlined.Translate,
-                            textId = R.string.translator,
-                        )
-                        SettingIconItem(
-                            currentType = state.settings.selectedSetting.value,
-                            settingType = Type.TextToSpeech,
-                            onClick = toggleOrSet,
-                            icon = Icons.Filled.RecordVoiceOver,
-                            textId = R.string.voice_reader,
-                        )
-                        SettingIconItem(
-                            currentType = state.settings.selectedSetting.value,
-                            settingType = Type.Style,
-                            onClick = toggleOrSet,
-                            icon = Icons.Outlined.ColorLens,
-                            textId = R.string.style,
-                        )
-                        SettingIconItem(
-                            currentType = state.settings.selectedSetting.value,
-                            settingType = Type.More,
-                            onClick = toggleOrSet,
-                            icon = Icons.Outlined.MoreHoriz,
-                            textId = R.string.more,
-                        )
+                        VoiceReaderDialog(state = state.settings.textToSpeech)
                     }
                 }
             }
@@ -314,7 +305,7 @@ private fun ViewsPreview(
         followSystem = remember { mutableStateOf(true) },
         currentTheme = remember { mutableStateOf(Themes.DARK) },
         textFont = remember { mutableStateOf("Arial") },
-        textSize = remember { mutableStateOf(20f) },
+        textSize = remember { mutableFloatStateOf(20f) },
     )
 
     InternalTheme {
@@ -324,9 +315,9 @@ private fun ViewsPreview(
                     showReaderInfo = remember { mutableStateOf(true) },
                     readerInfo = ReaderScreenState.CurrentInfo(
                         chapterTitle = remember { mutableStateOf("Chapter title") },
-                        chapterCurrentNumber = remember { mutableStateOf(2) },
-                        chapterPercentageProgress = remember { mutableStateOf(0.5f) },
-                        chaptersCount = remember { mutableStateOf(255) },
+                        chapterCurrentNumber = remember { mutableIntStateOf(2) },
+                        chapterPercentageProgress = remember { mutableFloatStateOf(0.5f) },
+                        chaptersCount = remember { mutableIntStateOf(255) },
                         chapterUrl = remember { mutableStateOf("Chapter url") },
                     ),
                     settings = ReaderScreenState.Settings(
@@ -353,6 +344,17 @@ private fun ViewsPreview(
     }
 }
 
+@Composable
+private fun ActionIconItem(
+    settingType: Type,
+    @StringRes textId: Int,
+    icon: ImageVector,
+    onClick: (type: Type) -> Unit,
+) {
+    IconButton(onClick = { onClick(settingType) }) {
+        Icon(icon, stringResource(id = textId))
+    }
+}
 
 private class PreviewDataProvider : PreviewParameterProvider<PreviewDataProvider.Data> {
     data class Data(

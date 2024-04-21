@@ -17,7 +17,7 @@ suspend fun epubImporter(
     appFileResolver: AppFileResolver,
     epub: EpubBook,
     addToLibrary: Boolean
-): Unit = withContext(Dispatchers.IO) {
+): String = withContext(Dispatchers.IO) {
     val localBookUrl = appFileResolver.getLocalBookPath(storageFolderName)
 
     // First clean any previous entries from the book
@@ -66,4 +66,5 @@ suspend fun epubImporter(
             )
         }
     }.awaitAll()
+    return@withContext localBookUrl
 }

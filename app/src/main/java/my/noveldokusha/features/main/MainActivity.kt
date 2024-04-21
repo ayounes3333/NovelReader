@@ -1,7 +1,9 @@
 package my.noveldokusha.features.main
 
 import android.content.Intent
+import android.content.IntentFilter
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -30,6 +32,8 @@ import my.noveldokusha.features.main.library.LibraryScreen
 import my.noveldokusha.features.main.settings.SettingsScreen
 import my.noveldokusha.services.EpubImportService
 import my.noveldokusha.ui.BaseActivity
+import my.noveldokusha.ui.browse.FileManager
+import my.noveldokusha.ui.browse.extractor.utils.OpenFileReceiver
 import my.noveldokusha.ui.composeViews.AnimatedTransition
 import my.noveldokusha.ui.theme.Theme
 
@@ -48,9 +52,11 @@ private val pages = listOf(
 @OptIn(ExperimentalAnimationApi::class)
 @AndroidEntryPoint
 open class MainActivity : BaseActivity() {
-
+    private lateinit var openFileReceiver: OpenFileReceiver
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FileManager.init(this)
+        configureReceiver()
         setContent {
             var activePageIndex by rememberSaveable { mutableStateOf(0) }
 
@@ -93,6 +99,17 @@ open class MainActivity : BaseActivity() {
         handleIntent(intent)
     }
 
+    private fun configureReceiver() {
+        val filter = IntentFilter()
+        filter.addAction(OpenFileReceiver.ACTION)
+        openFileReceiver = OpenFileReceiver()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(openFileReceiver, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(openFileReceiver, filter)
+        }
+    }
+
     private fun handleIntent(intent: Intent) {
         val action = intent.action ?: return
         val type = intent.type
@@ -124,6 +141,11 @@ open class MainActivity : BaseActivity() {
         if (epubUri != null) {
             EpubImportService.start(ctx = this, uri = epubUri)
         }
+    }
+
+    override fun onDestroy() {
+        unregisterReceiver(openFileReceiver)
+        super.onDestroy()
     }
 }
 

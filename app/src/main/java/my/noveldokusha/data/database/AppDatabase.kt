@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import androidx.room.withTransaction
 import my.noveldokusha.data.database.DAOs.ChapterBodyDao
 import my.noveldokusha.data.database.DAOs.ChapterDao
@@ -11,6 +12,8 @@ import my.noveldokusha.data.database.DAOs.LibraryDao
 import my.noveldokusha.data.database.tables.Book
 import my.noveldokusha.data.database.tables.Chapter
 import my.noveldokusha.data.database.tables.ChapterBody
+import my.noveldokusha.ui.browse.extractor.data.NovelFileInfo
+import my.noveldokusha.ui.browse.model.NovelFileDao
 import java.io.InputStream
 
 
@@ -25,15 +28,18 @@ interface AppDatabaseOperations {
     entities = [
         Book::class,
         Chapter::class,
-        ChapterBody::class
+        ChapterBody::class,
+        NovelFileInfo::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase(), AppDatabaseOperations {
     abstract fun libraryDao(): LibraryDao
     abstract fun chapterDao(): ChapterDao
     abstract fun chapterBodyDao(): ChapterBodyDao
+    abstract fun novelFilesDao(): NovelFileDao
 
     override suspend fun <T> transaction(block: suspend () -> T): T = withTransaction(block)
 
