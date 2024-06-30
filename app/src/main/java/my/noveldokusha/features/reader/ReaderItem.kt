@@ -30,6 +30,36 @@ sealed interface ReaderItem {
         val text: String
         val textTranslated: String?
         val textToDisplay get() = textTranslated ?: text
+        val textToSpeak
+            get() = textToDisplay.sanitizeForSpeech()
+    }
+
+    fun String.replaceAll(toReplace: List<String> , replacement: String): String {
+        var text = this
+        toReplace.forEach { text = text.replace(it, replacement) }
+        return text
+    }
+    fun String.sanitizeForSpeech(): String {
+        val stoppers = listOf(
+            "---",
+            "___",
+            "*",
+            "**",
+            "***",
+            "◇◆◇",
+            "◇◇◇",
+            "◆◆◆",
+            "◆◇◆",
+            "<",
+            ">",
+            "(",
+            ")",
+            "...",
+        )
+        return when (this) {
+            in stoppers -> "Full Stop"
+            else -> this.replaceAll(stoppers, "").takeIf { it.isNotEmpty() } ?: "Full Stop"
+        }
     }
 
     data class Title(
