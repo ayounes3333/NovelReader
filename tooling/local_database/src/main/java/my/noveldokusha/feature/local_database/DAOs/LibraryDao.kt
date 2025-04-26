@@ -15,6 +15,9 @@ interface LibraryDao {
     @Query("SELECT * FROM Book")
     suspend fun getAll(): List<Book>
 
+    @Query("SELECT * FROM Book LIMIT :limit OFFSET :offset")
+    suspend fun getBatch(offset: Int, limit: Int): List<Book>
+
     @Query("SELECT * FROM Book WHERE inLibrary == 1")
     suspend fun getAllInLibrary(): List<Book>
 

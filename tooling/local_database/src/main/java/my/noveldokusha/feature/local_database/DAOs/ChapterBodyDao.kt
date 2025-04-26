@@ -11,6 +11,9 @@ interface ChapterBodyDao {
     @Query("SELECT * FROM ChapterBody")
     suspend fun getAll(): List<ChapterBody>
 
+    @Query("SELECT * FROM ChapterBody LIMIT :limit OFFSET :offset")
+    suspend fun getBatch(offset: Int, limit: Int): List<ChapterBody>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertReplace(chapterBody: ChapterBody)
 

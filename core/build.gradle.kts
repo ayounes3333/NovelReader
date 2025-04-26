@@ -12,6 +12,7 @@ dependencies {
     implementation(projects.strings)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.jsoup)
+    implementation(libs.gson)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.timber)
     implementation(libs.compose.androidx.lifecycle.viewmodel)

@@ -126,6 +126,7 @@ dependencies {
     implementation(projects.features.sourceExplorer)
     implementation(projects.features.catalogExplorer)
     implementation(projects.features.libraryExplorer)
+    implementation(projects.features.localExplorer)
     implementation(projects.features.settings)
     implementation(projects.features.webview)
 

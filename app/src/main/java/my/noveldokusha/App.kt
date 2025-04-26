@@ -26,6 +26,7 @@ class App : Application(), ImageLoaderFactory, Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
@@ -51,5 +52,11 @@ class App : Application(), ImageLoaderFactory, Configuration.Provider {
             .setMinimumLoggingLevel(if (BuildConfig.DEBUG) Log.DEBUG else Log.INFO)
             .setWorkerFactory(appWorkerFactory)
             .build()
+    }
+
+    companion object {
+        @get:Synchronized
+        lateinit var instance: App
+            private set
     }
 }

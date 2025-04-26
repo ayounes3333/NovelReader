@@ -14,6 +14,7 @@ dependencies {
     implementation(projects.data)
     implementation(projects.scraper)
     implementation(projects.navigation)
+    implementation(projects.features.localExplorer)
     implementation(projects.tooling.localDatabase)
     implementation(projects.tooling.textTranslator.domain)
     implementation(projects.tooling.epubImporter)

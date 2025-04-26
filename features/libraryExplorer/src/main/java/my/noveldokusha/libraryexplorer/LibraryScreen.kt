@@ -85,7 +85,7 @@ fun LibraryScreen(
         },
         content = { innerPadding ->
             LibraryScreenBody(
-                tabs = listOf("Default", "Completed"),
+                tabs = listOf("Files", "Favorites", "Recent"),
                 innerPadding = innerPadding,
                 topAppBarState = scrollBehavior.state,
                 onBookClick = { book ->

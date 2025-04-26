@@ -11,6 +11,8 @@ hilt-androidx = "1.2.0"
 
 ksp = "1.9.23-1.0.20"
 
+zip4j = "2.11.1"
+
 kotlinx-coroutines-core = "1.7.3"
 kotlinx-coroutines-playServices = "1.7.3"
 kotlinx-serialization-json = "1.5.1"
@@ -145,6 +147,9 @@ kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "
 kotlin-script-runtime = { module = "org.jetbrains.kotlin:kotlin-script-runtime", version.ref = "kotlin" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines-core" }
 kotlinx-coroutines-playServices = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinx-coroutines-playServices" }
+
+# Zip4J
+zip4j = { module = "net.lingala.zip4j:zip4j", version.ref = "zip4j" }
 
 # Android
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "androidx-constraintLayout" }

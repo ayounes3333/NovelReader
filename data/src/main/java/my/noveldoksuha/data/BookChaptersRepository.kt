@@ -23,6 +23,8 @@ class BookChaptersRepository @Inject constructor(
         chapterDao.setAsRead(chapterUrl, read)
 
     suspend fun get(url: String) = chapterDao.get(url)
+    suspend fun getBatch(offset: Int, limit: Int): List<Chapter> =
+        chapterDao.getBatch(offset, limit)
     suspend fun hasChapters(bookUrl: String) = chapterDao.hasChapters(bookUrl)
     suspend fun getAll() = chapterDao.getAll()
     suspend fun updateTitle(url: String, title: String) =

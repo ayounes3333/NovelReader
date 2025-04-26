@@ -17,6 +17,8 @@ class ChapterBodyRepository @Inject constructor(
     private val downloaderRepository: DownloaderRepository,
 ) {
     suspend fun getAll() = chapterBodyDao.getAll()
+    suspend fun getBatch(offset: Int, limit: Int): List<ChapterBody> =
+        chapterBodyDao.getBatch(offset, limit)
     suspend fun insertReplace(chapterBodies: List<ChapterBody>) =
         chapterBodyDao.insertReplace(chapterBodies)
 

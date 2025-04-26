@@ -48,6 +48,9 @@ class LibraryBooksRepository @Inject constructor(
 
     suspend fun get(url: String) = libraryDao.get(url)
 
+    suspend fun getBatch(offset: Int, limit: Int): List<Book> =
+        libraryDao.getBatch(offset, limit)
+
     suspend fun updateLastReadChapter(bookUrl: String, lastReadChapterUrl: String) =
         libraryDao.updateLastReadChapter(
             bookUrl = bookUrl,

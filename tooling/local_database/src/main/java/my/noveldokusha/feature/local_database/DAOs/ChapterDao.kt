@@ -14,6 +14,9 @@ interface ChapterDao {
     @Query("SELECT * FROM Chapter")
     suspend fun getAll(): List<Chapter>
 
+    @Query("SELECT * FROM Chapter LIMIT :limit OFFSET :offset")
+    suspend fun getBatch(offset: Int, limit: Int): List<Chapter>
+
     @Query(
         """
         SELECT * FROM Chapter

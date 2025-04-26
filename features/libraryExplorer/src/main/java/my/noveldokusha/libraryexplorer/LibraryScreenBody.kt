@@ -1,5 +1,6 @@
 package my.noveldokusha.libraryexplorer
 
+import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -29,6 +30,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -37,6 +39,9 @@ import my.noveldoksuha.coreui.components.CollapsibleDivider
 import my.noveldoksuha.coreui.theme.colorApp
 import my.noveldokusha.core.domain.LibraryCategory
 import my.noveldokusha.feature.local_database.BookWithContext
+import my.noveldokusha.features.localexplorer.view.BrowseScreen
+import my.noveldokusha.features.localexplorer.viewmodel.BrowseViewModel
+import my.noveldokusha.tooling.epub_importer.EpubImportService
 
 @OptIn(
     ExperimentalFoundationApi::class,
@@ -50,7 +55,8 @@ internal fun LibraryScreenBody(
     topAppBarState: TopAppBarState,
     onBookClick: (BookWithContext) -> Unit,
     onBookLongClick: (BookWithContext) -> Unit,
-    viewModel: LibraryPageViewModel = viewModel()
+    viewModel: LibraryPageViewModel = viewModel(),
+    browseViewModel: BrowseViewModel = viewModel()
 ) {
     val tabsSizeUpdated = rememberUpdatedState(newValue = tabs.size)
 
@@ -119,17 +125,33 @@ internal fun LibraryScreenBody(
                 }
                 val list: List<BookWithContext> by remember {
                     derivedStateOf {
-                        when (showCompleted) {
-                            true -> viewModel.listCompleted
-                            else -> viewModel.listReading
+                        when (page) {
+                            1 -> viewModel.listFavorites
+                            2 -> viewModel.listRecent
+                            else -> emptyList()
                         }
                     }
                 }
-                LibraryPageBody(
-                    list = list,
-                    onClick = onBookClick,
-                    onLongClick = onBookLongClick
-                )
+                if (page == 0) {
+                    val context = LocalContext.current
+                    BrowseScreen(
+                        viewModel = browseViewModel,
+                        onBookClick = { file ->
+                            if (file.extension.lowercase().contains("epub"))
+                                EpubImportService.start(
+                                    ctx = context,
+                                    uri = Uri.fromFile(file),
+                                    openAfterImporting = true
+                                )
+                        }
+                    )
+                } else {
+                    LibraryPageBody(
+                        list = list,
+                        onClick = onBookClick,
+                        onLongClick = onBookLongClick
+                    )
+                }
             }
         }
         PullRefreshIndicator(

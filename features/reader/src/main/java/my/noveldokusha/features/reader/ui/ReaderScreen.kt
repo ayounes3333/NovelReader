@@ -62,6 +62,7 @@ import my.noveldokusha.features.reader.features.LiveTranslationSettingData
 import my.noveldokusha.features.reader.features.TextSynthesis
 import my.noveldokusha.features.reader.features.TextToSpeechSettingData
 import my.noveldokusha.features.reader.ui.ReaderScreenState.Settings.Type
+import my.noveldokusha.features.reader.ui.settingDialogs.VoiceReaderDialog
 import my.noveldokusha.reader.R
 import my.noveldokusha.text_to_speech.Utterance
 import my.noveldokusha.text_to_speech.VoiceData
@@ -127,6 +128,30 @@ internal fun ReaderScreen(
                                 }
                             },
                             actions = {
+                                val toggleOrSet = { type: Type ->
+                                    state.settings.selectedSetting.value = when (state.settings.selectedSetting.value) {
+                                        type -> Type.None
+                                        else -> type
+                                    }
+                                }
+                                if (state.settings.liveTranslation.isAvailable) ActionIconItem(
+                                    settingType = Type.LiveTranslation,
+                                    textId = R.string.translator,
+                                    icon = Icons.Outlined.Translate,
+                                    onClick = toggleOrSet,
+                                )
+                                ActionIconItem(
+                                    settingType = Type.TextToSpeech,
+                                    textId = R.string.voice_reader,
+                                    icon = Icons.Filled.RecordVoiceOver,
+                                    onClick = toggleOrSet,
+                                )
+                                ActionIconItem(
+                                    settingType = Type.Style,
+                                    textId = R.string.style,
+                                    icon = Icons.Outlined.ColorLens,
+                                    onClick = toggleOrSet,
+                                )
                                 IconButton(onClick = onOpenChapterInWeb) {
                                     Icon(Icons.Filled.Public, null)
                                 }
@@ -161,12 +186,6 @@ internal fun ReaderScreen(
         content = readerContent,
         bottomBar = {
 
-            val toggleOrSet = { type: Type ->
-                state.settings.selectedSetting.value = when (state.settings.selectedSetting.value) {
-                    type -> Type.None
-                    else -> type
-                }
-            }
             AnimatedVisibility(
                 visible = state.showReaderInfo.value,
                 enter = expandVertically(initialHeight = { 0 }) + fadeIn(),
@@ -188,36 +207,8 @@ internal fun ReaderScreen(
                         modifier = Modifier
                             .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                             .animateContentSize(),
-                        containerColor = MaterialTheme.colorApp.tintedSurface,
-                    ) {
-                        if (state.settings.liveTranslation.isAvailable) SettingIconItem(
-                            currentType = state.settings.selectedSetting.value,
-                            settingType = Type.LiveTranslation,
-                            onClick = toggleOrSet,
-                            icon = Icons.Outlined.Translate,
-                            textId = R.string.translator,
-                        )
-                        SettingIconItem(
-                            currentType = state.settings.selectedSetting.value,
-                            settingType = Type.TextToSpeech,
-                            onClick = toggleOrSet,
-                            icon = Icons.Filled.RecordVoiceOver,
-                            textId = R.string.voice_reader,
-                        )
-                        SettingIconItem(
-                            currentType = state.settings.selectedSetting.value,
-                            settingType = Type.Style,
-                            onClick = toggleOrSet,
-                            icon = Icons.Outlined.ColorLens,
-                            textId = R.string.style,
-                        )
-                        SettingIconItem(
-                            currentType = state.settings.selectedSetting.value,
-                            settingType = Type.More,
-                            onClick = toggleOrSet,
-                            icon = Icons.Outlined.MoreHoriz,
-                            textId = R.string.more,
-                        )
+                        ) {
+                        VoiceReaderDialog(state = state.settings.textToSpeech)
                     }
                 }
             }
@@ -380,4 +371,16 @@ private class PreviewDataProvider : PreviewParameterProvider<PreviewDataProvider
         Data(selectedSetting = Type.Style),
         Data(selectedSetting = Type.More),
     )
+}
+
+@Composable
+private fun ActionIconItem(
+    settingType: Type,
+    @StringRes textId: Int,
+    icon: ImageVector,
+    onClick: (type: Type) -> Unit,
+) {
+    IconButton(onClick = { onClick(settingType) }) {
+        Icon(icon, stringResource(id = textId))
+    }
 }

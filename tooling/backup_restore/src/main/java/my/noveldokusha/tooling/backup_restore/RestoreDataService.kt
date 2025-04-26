@@ -29,10 +29,8 @@ import my.noveldokusha.core.tryAsResponse
 import my.noveldokusha.core.utils.Extra_Uri
 import my.noveldokusha.core.utils.isServiceRunning
 import my.noveldokusha.feature.local_database.AppDatabase
-import okhttp3.internal.closeQuietly
 import timber.log.Timber
 import java.io.File
-import java.io.InputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import javax.inject.Inject
@@ -130,7 +128,6 @@ class RestoreDataService : Service() {
      * This function will also show a status notificaton of the restoration progress.
      */
     private suspend fun restoreData(uri: Uri) = withContext(Dispatchers.IO) {
-
         notificationsCenter.modifyNotification(
             notificationBuilder,
             notificationId = notificationId
@@ -140,108 +137,114 @@ class RestoreDataService : Service() {
             setProgress(100, 0, true)
         }
 
-        val inputStream = context.contentResolver.openInputStream(uri)
-        if (inputStream == null) {
-            notificationsCenter.showNotification(
-                channelName = channelName,
-                channelId = channelId,
-                notificationId = "Backup restore failure".hashCode()
-            ) {
-                text = getString(R.string.failed_to_restore_cant_access_file)
+        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+            ZipInputStream(inputStream).use { zipStream ->
+                var entry: ZipEntry?
+                while (zipStream.nextEntry.also { entry = it } != null) {
+                    val currentEntry = entry ?: continue
+                    if (currentEntry.isDirectory) continue
+
+                    when {
+                        currentEntry.name == "database.sqlite3" -> processDatabaseEntry(zipStream)
+                        currentEntry.name.startsWith("books/") -> processBookEntry(zipStream, currentEntry)
+                    }
+                    zipStream.closeEntry()
+                }
             }
+        } ?: run {
+            showErrorNotification(R.string.failed_to_restore_cant_access_file)
             return@withContext
         }
 
-        val zipSequence = ZipInputStream(inputStream).let { zipStream ->
-            generateSequence { zipStream.nextEntry }
-                .filterNot { it.isDirectory }
-                .associateWith { zipStream.readBytes() }
+        notificationsCenter.modifyNotification(
+            notificationBuilder,
+            notificationId = notificationId
+        ) {
+            removeProgressBar()
+            text = getString(R.string.data_restored)
+        }
+    }
+
+    private suspend fun processDatabaseEntry(zipStream: ZipInputStream) {
+        val tempFile = File.createTempFile("restore_db", ".tmp", context.cacheDir).apply {
+            deleteOnExit()
         }
 
-
-        suspend fun mergeToDatabase(inputStream: InputStream) {
-            tryAsResponse {
-                notificationsCenter.modifyNotification(
-                    notificationBuilder,
-                    notificationId = notificationId
-                ) {
-                    text = getString(R.string.loading_database)
-                }
-                val backupDatabase = object {
-                    val newDatabase = inputStream.use {
-                        AppDatabase.createRoomFromStream(context, "temp_database", it)
-                    }
-                    val bookChapters = BookChaptersRepository(
-                        chapterDao = newDatabase.chapterDao(),
-                    )
-                    val chapterBody = ChapterBodyRepository(
-                        chapterBodyDao = newDatabase.chapterBodyDao(),
-                        appDatabase = newDatabase,
-                        bookChaptersRepository = bookChapters,
-                        downloaderRepository = downloaderRepository
-                    )
-                    val libraryBooks = LibraryBooksRepository(
-                        libraryDao = newDatabase.libraryDao(),
-                        appDatabase = newDatabase,
-                        context = context,
-                        appFileResolver = appFileResolver,
-                        appCoroutineScope = appCoroutineScope
-                    )
-                    fun close() = newDatabase.closeDatabase()
-                    fun delete() = newDatabase.clearDatabase()
-                }
-                notificationsCenter.modifyNotification(
-                    notificationBuilder,
-                    notificationId = notificationId
-                ) {
-                    text = getString(R.string.adding_books)
-                }
-                appRepository.libraryBooks.insertReplace(backupDatabase.libraryBooks.getAll())
-                notificationsCenter.modifyNotification(
-                    notificationBuilder,
-                    notificationId = notificationId
-                ) {
-                    text = getString(R.string.adding_chapters)
-                }
-                appRepository.bookChapters.insert(backupDatabase.bookChapters.getAll())
-                notificationsCenter.modifyNotification(
-                    notificationBuilder,
-                    notificationId = notificationId
-                ) {
-                    text = getString(R.string.adding_chapters_text)
-                }
-                appRepository.chapterBody.insertReplace(backupDatabase.chapterBody.getAll())
-                backupDatabase.close()
-                backupDatabase.delete()
-            }.onError {
-                notificationsCenter.showNotification(
-                    channelName = channelName,
-                    channelId = channelId,
-                    notificationId = "Backup restore failure - invalid database".hashCode()
-                ) {
-                    removeProgressBar()
-                    text = getString(R.string.failed_to_restore_invalid_backup_database)
-                }
-            }.onSuccess {
-                notificationsCenter.showNotification(
-                    channelName = channelName,
-                    channelId = channelId,
-                    notificationId = "Backup restore success".hashCode()
-                ) {
-                    title = getString(R.string.backup_restored)
-                }
+        try {
+            // Stream database to temp file
+            tempFile.outputStream().use { output ->
+                zipStream.copyTo(output)
             }
-        }
 
-        fun mergeToBookFolder(entry: ZipEntry, inputStream: InputStream) {
-            val file = File(appRepository.settings.folderBooks.parentFile, entry.name)
-            if (file.isDirectory) return
-            file.parentFile?.mkdirs()
-            if (file.parentFile?.exists() != true) return
-            file.outputStream().use { output ->
-                inputStream.use { it.copyTo(output) }
-            }
+            // Create database from temp file
+            val backupDatabase = TempDatabase(
+                newDatabase = AppDatabase.createRoomFromFile(context, "temp_database", tempFile),
+                context = context,
+                appFileResolver = appFileResolver,
+                appCoroutineScope = appCoroutineScope,
+                downloaderRepository = downloaderRepository
+            )
+
+            // Process data in batches
+            processInBatches(backupDatabase.libraryBooks, backupDatabase.bookChapters, backupDatabase.chapterBody)
+
+            backupDatabase.close()
+        } catch (e: Exception) {
+            Timber.e(e, "Database restore failed")
+            showErrorNotification(R.string.failed_to_restore_invalid_backup_database)
+        } finally {
+            tempFile.delete()
         }
+    }
+
+    private suspend fun processInBatches(
+        libraryBooks: LibraryBooksRepository,
+        bookChapters: BookChaptersRepository,
+        chapterBody: ChapterBodyRepository
+    ) {
+        // Process library books in batches
+        val booksBatchSize = 100
+        var bookOffset = 0
+        do {
+            println("processing from book offset $bookOffset")
+            val booksBatch = withContext(Dispatchers.IO) {
+                libraryBooks.getBatch(bookOffset, booksBatchSize)
+            }
+            appRepository.libraryBooks.insertReplace(booksBatch)
+            bookOffset += booksBatchSize
+        } while (booksBatch.size == booksBatchSize)
+
+        // Process chapters in batches
+        val chaptersBatchSize = 200
+        var chaptersOffset = 0
+        do {
+            println("processing from chapter offset $chaptersOffset")
+            val chaptersBatch = withContext(Dispatchers.IO) {
+                bookChapters.getBatch(chaptersOffset, chaptersBatchSize)
+            }
+            appRepository.bookChapters.insert(chaptersBatch)
+            chaptersOffset += chaptersBatchSize
+        } while (chaptersBatch.size == chaptersBatchSize)
+
+        // Process chapter bodies in smallest batches
+        val bodiesBatchSize = 50
+        var bodiesOffset = 0
+        do {
+            println("processing from body offset $bodiesOffset")
+            val bodiesBatch = withContext(Dispatchers.IO) {
+                chapterBody.getBatch(bodiesOffset, bodiesBatchSize)
+            }
+            appRepository.chapterBody.insertReplace(bodiesBatch)
+            bodiesOffset += bodiesBatchSize
+        } while (bodiesBatch.size == bodiesBatchSize)
+    }
+
+    private fun processBookEntry(zipStream: ZipInputStream, entry: ZipEntry) {
+        val targetFile = File(appRepository.settings.folderBooks.parentFile, entry.name)
+        if (targetFile.isDirectory) return
+
+        targetFile.parentFile?.mkdirs()
+        if (targetFile.parentFile?.exists() != true) return
 
         notificationsCenter.modifyNotification(
             notificationBuilder,
@@ -249,18 +252,52 @@ class RestoreDataService : Service() {
         ) {
             text = getString(R.string.adding_images)
         }
-        for ((entry, file) in zipSequence) when {
-            entry.name == "database.sqlite3" -> mergeToDatabase(file.inputStream())
-            entry.name.startsWith("books/") -> mergeToBookFolder(entry, file.inputStream())
-        }
 
-        inputStream.closeQuietly()
-        notificationsCenter.modifyNotification(
-            notificationBuilder,
-            notificationId = notificationId
+        targetFile.outputStream().use { output ->
+            zipStream.copyTo(output)
+        }
+    }
+
+    private fun showErrorNotification(errorResId: Int) {
+        notificationsCenter.showNotification(
+            channelName = channelName,
+            channelId = channelId,
+            notificationId = "Backup restore failure".hashCode()
         ) {
             removeProgressBar()
-            text = getString(R.string.data_restored)
+            text = getString(errorResId)
+        }
+    }
+
+    private class TempDatabase(
+        val newDatabase: AppDatabase,
+        val context: Context,
+        appFileResolver: AppFileResolver,
+        appCoroutineScope: AppCoroutineScope,
+        downloaderRepository: DownloaderRepository
+    ) {
+        val bookChapters = BookChaptersRepository(
+            chapterDao = newDatabase.chapterDao(),
+        )
+
+        val chapterBody = ChapterBodyRepository(
+            chapterBodyDao = newDatabase.chapterBodyDao(),
+            appDatabase = newDatabase,
+            bookChaptersRepository = bookChapters,
+            downloaderRepository = downloaderRepository
+        )
+
+        val libraryBooks = LibraryBooksRepository(
+            libraryDao = newDatabase.libraryDao(),
+            appDatabase = newDatabase,
+            context = context,
+            appFileResolver = appFileResolver,
+            appCoroutineScope = appCoroutineScope
+        )
+
+        fun close() {
+            newDatabase.closeDatabase()
+            AppDatabase.deleteDatabaseFiles(context, "temp_database")
         }
     }
 }

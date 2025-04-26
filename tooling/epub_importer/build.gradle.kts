@@ -12,6 +12,7 @@ dependencies {
     implementation(projects.coreui)
     implementation(projects.strings)
     implementation(projects.data)
+    implementation(projects.features.localExplorer)
     implementation(projects.tooling.localDatabase)
     implementation(projects.tooling.epubParser)
 

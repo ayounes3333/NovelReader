@@ -25,7 +25,7 @@ import my.noveldokusha.text_to_speech.TextToSpeechManager
 import my.noveldokusha.text_to_speech.Utterance
 import my.noveldokusha.text_to_speech.VoiceData
 
-internal data class TextToSpeechSettingData(
+data class TextToSpeechSettingData(
     val isPlaying: MutableState<Boolean>,
     val isLoadingChapter: MutableState<Boolean>,
     val activeVoice: State<VoiceData?>,
@@ -48,7 +48,7 @@ internal data class TextToSpeechSettingData(
     val setVoicePitch: (Float) -> Unit,
 )
 
-internal data class TextSynthesis(
+data class TextSynthesis(
     val itemPos: ReaderItem.Position,
     override val playState: Utterance.PlayState
 ) : Utterance<TextSynthesis> {

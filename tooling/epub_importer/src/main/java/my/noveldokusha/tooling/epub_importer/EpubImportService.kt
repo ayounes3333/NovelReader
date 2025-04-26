@@ -8,6 +8,7 @@ import android.os.IBinder
 import android.provider.OpenableColumns
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.core.net.toFile
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +24,7 @@ import my.noveldokusha.core.tryAsResponse
 import my.noveldokusha.core.utils.Extra_Uri
 import my.noveldokusha.core.utils.isServiceRunning
 import my.noveldokusha.epub_tooling.epubParser
+import my.noveldokusha.features.localexplorer.extractor.utils.OpenFileReceiver
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -39,15 +41,18 @@ class EpubImportService : Service() {
         var uri by Extra_Uri()
 
         constructor(intent: Intent) : super(intent)
-        constructor(ctx: Context, uri: Uri) : super(ctx, EpubImportService::class.java) {
+        constructor(ctx: Context, uri: Uri, openAfterImporting: Boolean) : super(ctx, EpubImportService::class.java) {
             this.uri = uri
+            putExtra("openAfterImporting", openAfterImporting)
         }
+        val openAfterImporting: Boolean
+            get() = getBooleanExtra("openAfterImporting", false)
     }
 
     companion object {
-        fun start(ctx: Context, uri: Uri) {
+        fun start(ctx: Context, uri: Uri, openAfterImporting: Boolean = false) {
             if (!isRunning(ctx))
-                ContextCompat.startForegroundService(ctx, IntentData(ctx, uri))
+                ContextCompat.startForegroundService(ctx, IntentData(ctx, uri, openAfterImporting))
         }
 
         private fun isRunning(context: Context): Boolean =
@@ -104,14 +109,7 @@ class EpubImportService : Service() {
                     return@tryAsResponse
                 }
 
-                val fileName = contentResolver.query(
-                    intentData.uri,
-                    arrayOf(OpenableColumns.DISPLAY_NAME),
-                    null,
-                    null,
-                    null,
-                    null
-                ).asSequence().map { it.getString(0) }.last()
+                val fileName = intentData.uri.toFile().name
 
                 val epub = inputStream.use { epubParser(inputStream = it) }
 
@@ -121,11 +119,19 @@ class EpubImportService : Service() {
                 ) {
                     text = getString(R.string.importing_epub)
                 }
-                epubImporterRepository.epubImporter(
+                val url = epubImporterRepository.epubImporter(
                     storageFolderName = fileName,
                     epub = epub,
                     addToLibrary = true
                 )
+                if (intentData.openAfterImporting) {
+                    val fileIntent = Intent()
+                    fileIntent.action = OpenFileReceiver.ACTION
+                    fileIntent.setPackage(packageName)
+                    fileIntent.putExtra("title", fileName)
+                    fileIntent.putExtra("url", url)
+                    sendBroadcast(fileIntent)
+                }
             }.onError {
                 Timber.e(it.exception)
                 notificationsCenter.showNotification(

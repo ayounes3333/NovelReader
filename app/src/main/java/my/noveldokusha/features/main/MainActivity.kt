@@ -2,6 +2,7 @@ package my.noveldokusha.features.main
 
 import android.Manifest
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build.VERSION
@@ -35,6 +36,8 @@ import my.noveldoksuha.coreui.components.AnimatedTransition
 import my.noveldoksuha.coreui.theme.Theme
 import my.noveldokusha.R
 import my.noveldokusha.catalogexplorer.CatalogExplorerScreen
+import my.noveldokusha.features.localexplorer.FileManager
+import my.noveldokusha.features.localexplorer.extractor.utils.OpenFileReceiver
 import my.noveldokusha.libraryexplorer.LibraryScreen
 import my.noveldokusha.settings.SettingsScreen
 import my.noveldokusha.tooling.epub_importer.EpubImportService
@@ -54,7 +57,7 @@ private val pages = listOf(
 @OptIn(ExperimentalAnimationApi::class)
 @AndroidEntryPoint
 open class MainActivity : BaseActivity() {
-
+    private lateinit var openFileReceiver: OpenFileReceiver
     private val requestNotificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { }
@@ -63,6 +66,9 @@ open class MainActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
 
         requestPushNotificationPermission()
+
+        FileManager.init(this)
+        configureReceiver()
 
         setContent {
             var activePageIndex by rememberSaveable { mutableIntStateOf(0) }
@@ -104,6 +110,17 @@ open class MainActivity : BaseActivity() {
         }
 
         handleIntent(intent)
+    }
+
+    private fun configureReceiver() {
+        val filter = IntentFilter()
+        filter.addAction(OpenFileReceiver.ACTION)
+        openFileReceiver = OpenFileReceiver()
+        if (VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) {
+            registerReceiver(openFileReceiver, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(openFileReceiver, filter, RECEIVER_NOT_EXPORTED)
+        }
     }
 
     private fun requestPushNotificationPermission() {
@@ -149,6 +166,11 @@ open class MainActivity : BaseActivity() {
         if (epubUri != null) {
             EpubImportService.start(ctx = this, uri = epubUri)
         }
+    }
+
+    override fun onDestroy() {
+        unregisterReceiver(openFileReceiver)
+        super.onDestroy()
     }
 }
 
