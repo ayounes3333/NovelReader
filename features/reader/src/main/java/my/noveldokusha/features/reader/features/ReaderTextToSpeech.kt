@@ -236,7 +236,10 @@ internal class ReaderTextToSpeech(
             )
         )
 
-        nextItems.forEach(::speakItem)
+        nextItems.forEachIndexed { index, readerItem ->
+            speakItem(readerItem)
+            println("speaking item $index of ${nextItems.size} of chapter $chapterIndex")
+        }
     }
 
     @Synchronized
@@ -481,7 +484,10 @@ internal class ReaderTextToSpeech(
             quantity = quantity
         )
         if (nextItems.isEmpty()) return
-        nextItems.forEach(::speakItem)
+        nextItems.forEachIndexed { index, readerItem ->
+            speakItem(readerItem)
+            println("speaking item $index of ${nextItems.size} of chapter $chapterIndex")
+        }
     }
 
     private fun getChapterNextItems(
@@ -503,7 +509,7 @@ internal class ReaderTextToSpeech(
         when (item) {
             is ReaderItem.Text -> {
                 manager.speak(
-                    text = item.textToDisplay,
+                    text = item.textToSpeak,
                     textSynthesis = TextSynthesis(
                         itemPos = item,
                         playState = Utterance.PlayState.PLAYING

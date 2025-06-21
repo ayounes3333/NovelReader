@@ -42,12 +42,16 @@ suspend fun epubParser(
     val document = parseXMLFile(opfFile.data)
         ?: throw Exception(".opf file failed to parse data")
     val metadata = document.selectFirstTag("metadata")
+        ?: document.selectFirstTag("ns0:metadata")
         ?: throw Exception(".opf file metadata section missing")
     val manifest = document.selectFirstTag("manifest")
+        ?: document.selectFirstTag("ns0:manifest")
         ?: throw Exception(".opf file manifest section missing")
     val spine = document.selectFirstTag("spine")
+        ?: document.selectFirstTag("ns0:spine")
         ?: throw Exception(".opf file spine section missing")
     val guide = document.selectFirstTag("guide")
+        ?: document.selectFirstTag("ns0:guide")
     val metadataTitle = metadata.selectFirstChildTag("dc:title")?.textContent
         ?: "Unknown Title"
     val metadataCreator = metadata.selectFirstChildTag("dc:creator")?.textContent
@@ -58,6 +62,10 @@ suspend fun epubParser(
         .selectChildTag("meta")
         .find { it.getAttributeValue("name") == "cover" }
         ?.getAttributeValue("content")
+        ?: metadata
+            .selectChildTag("ns0:meta")
+            .find { it.getAttributeValue("name") == "cover" }
+            ?.getAttributeValue("content")
 
 
     val hrefRootPath = File(opfFilePath).parentFile ?: File("")
@@ -66,7 +74,9 @@ suspend fun epubParser(
         .invariantSeparatorsPathString
         .removePrefix("/")
 
-    val manifestItems = manifest.selectChildTag("item").map {
+    val items = manifest.selectChildTag("item").takeIf { it.count() > 0 }
+        ?: manifest.selectChildTag("ns0:item")
+    val manifestItems = items.map {
         ManifestItem(
             id = it.getAttribute("id"),
             absPath = it.getAttribute("href").decodedURL.hrefAbsolutePath(),
@@ -74,8 +84,6 @@ suspend fun epubParser(
             properties = it.getAttribute("properties")
         )
     }.associateBy { it.id }
-
-
 
     fun parseCoverImageFromXhtml(coverFile: EpubFile): Image? {
         val doc = Jsoup.parse(coverFile.data.inputStream(), "UTF-8", "")
@@ -129,7 +137,7 @@ suspend fun epubParser(
     val navMap = doc.selectFirst("navMap") ?: throw Exception("Invalid NCX file: navMap not found")
 
     val tocEntries = navMap.select("navPoint").map { navPoint ->
-        val title =  navPoint.selectFirst("navLabel")?.selectFirst("text")?.text() ?: ""
+        val title = navPoint.selectFirst("navLabel")?.selectFirst("text")?.text() ?: ""
         var link = navPoint.selectFirst("content")?.attribute("src")?.value ?: "" // Add the prefix
         if (!link.startsWith(rootPath))
             link = "$rootPath/$link"
@@ -155,7 +163,9 @@ suspend fun epubParser(
     var currentTOC: ToCEntry? = null
     var currentChapterBody = ""
 
-    spine.selectChildTag("itemref").forEach { itemRef ->
+    val itemRefs = spine.selectChildTag("itemref").takeIf { it.count() > 0 }
+        ?: spine.selectChildTag("ns0:itemref")
+    itemRefs.forEach { itemRef ->
         val itemId = itemRef.getAttribute("idref")
         val spineItem = manifestItems[itemId]
 
@@ -171,7 +181,13 @@ suspend fun epubParser(
 
             // If currentTOC exists and we have a new tocEntry, add the accumulated chapter content
             if (currentTOC != null && tocEntry != null && currentChapterBody.isNotEmpty()) {
-                chapters.add(Chapter(currentTOC!!.chapterLink, currentTOC!!.chapterTitle, currentChapterBody))
+                chapters.add(
+                    Chapter(
+                        currentTOC!!.chapterLink,
+                        currentTOC!!.chapterTitle,
+                        currentChapterBody
+                    )
+                )
                 currentChapterBody = ""
             }
 
@@ -180,7 +196,13 @@ suspend fun epubParser(
             } else {
                 currentTOC = tocEntry
                 if (spineItem.mediaType.startsWith("image/")) {
-                    chapters.add(Chapter("image_${spineItem.absPath}", "", parser.parseAsImage(spineItem.absPath)))
+                    chapters.add(
+                        Chapter(
+                            "image_${spineItem.absPath}",
+                            "",
+                            parser.parseAsImage(spineItem.absPath)
+                        )
+                    )
                 } else {
                     // Append the chapter content to the current chapter body
                     currentChapterBody += if (res.body.isBlank()) "" else "\n\n${res.body}"
@@ -191,7 +213,13 @@ suspend fun epubParser(
 
     // Add the last chapter if any content remains
     if (currentTOC != null && currentChapterBody.isNotEmpty()) {
-        chapters.add(Chapter(currentTOC!!.chapterLink, currentTOC!!.chapterTitle, currentChapterBody))
+        chapters.add(
+            Chapter(
+                currentTOC!!.chapterLink,
+                currentTOC!!.chapterTitle,
+                currentChapterBody
+            )
+        )
     }
 
 

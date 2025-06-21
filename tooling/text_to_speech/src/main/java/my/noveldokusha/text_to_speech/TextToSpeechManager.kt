@@ -87,6 +87,7 @@ class TextToSpeechManager<T : Utterance<T>>(
                 putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, uniqueID)
             }
             service.speak(textSlice, TextToSpeech.QUEUE_ADD, bundle, uniqueID)
+            println("Spoken: $uniqueID, $textSlice of ${subItems.size} slices of $text")
         }
     }
 

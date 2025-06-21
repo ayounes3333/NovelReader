@@ -117,7 +117,8 @@ object FileManager {
     }
 
     fun getCachedNovelCover(filename: String): Bitmap? {
-        val file = File(activity.cacheDir, "$filename.png")
+        val validFileName = filename.takeIf { it.length < 21 } ?: filename.substring(0, 20)
+        val file = File(activity.cacheDir, "$validFileName.png")
         return if (file.exists()) {
             BitmapFactory.decodeFile(file.path)
         } else null
@@ -125,7 +126,8 @@ object FileManager {
 
     fun saveNovelCover(filename: String, bitmap: Bitmap) {
         //create a file to write bitmap data
-        val f = File(activity.cacheDir, "$filename.png")
+        val validFileName = filename.takeIf { it.length < 21 } ?: filename.substring(0, 20)
+        val f = File(activity.cacheDir, "$validFileName.png")
         f.parentFile?.mkdirs()
         f.createNewFile()
 
