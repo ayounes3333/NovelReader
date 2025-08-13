@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -32,6 +33,7 @@ class BrowseViewModel @Inject constructor (private val browseRepository: BrowseR
     val query: State<String>
         get() = _query
 
+    private var searchJob: Job? = null
 
     // This function will make the textSearch value changes
     fun setSearchText(it: String) {
@@ -49,11 +51,16 @@ class BrowseViewModel @Inject constructor (private val browseRepository: BrowseR
 
     fun clearSearch() {
         _query.value = ""
+        searchJob?.cancel()
         browse(FileManager.getCurrentDirectory())
     }
 
     fun search() {
-        browse(FileManager.getCurrentDirectory(), query = query.value)
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(300) // Debounce for 300ms
+            browse(FileManager.getCurrentDirectory(), query = query.value)
+        }
     }
 
     init {

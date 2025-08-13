@@ -58,8 +58,9 @@ sealed interface ReaderItem {
             ")",
             "...",
         )
-        return when (this) {
-            in stoppers -> "Full Stop"
+        return when {
+            this in stoppers -> "Full Stop"
+            !this.any { it.isLetterOrDigit() } -> "Full Stop"
             else -> this.replaceAll(stoppers, "").takeIf { it.isNotEmpty() } ?: "Full Stop"
         }
     }
@@ -104,4 +105,3 @@ sealed interface ReaderItem {
     data class Error(override val chapterIndex: Int, val text: String) : ReaderItem
     data class Padding(override val chapterIndex: Int) : ReaderItem
 }
-
