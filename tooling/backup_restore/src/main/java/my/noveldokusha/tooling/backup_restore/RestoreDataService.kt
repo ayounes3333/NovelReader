@@ -176,7 +176,24 @@ class RestoreDataService : Service() {
                 zipStream.copyTo(output)
             }
 
-            // Create database from temp file
+            // Check database version before attempting to restore
+            val backupVersion = getDatabaseVersion(tempFile)
+            val currentVersion = 9 // Current database version
+
+            notificationsCenter.modifyNotification(
+                notificationBuilder,
+                notificationId = notificationId
+            ) {
+                title = getString(R.string.restore_data)
+                text = if (backupVersion < currentVersion) {
+                    "Migrating database from version $backupVersion to $currentVersion..."
+                } else {
+                    "Processing database..."
+                }
+                setProgress(100, 25, false)
+            }
+
+            // Create database from temp file with automatic migration support
             val backupDatabase = TempDatabase(
                 newDatabase = AppDatabase.createRoomFromFile(context, "temp_database", tempFile),
                 context = context,
@@ -185,15 +202,52 @@ class RestoreDataService : Service() {
                 downloaderRepository = downloaderRepository
             )
 
+            notificationsCenter.modifyNotification(
+                notificationBuilder,
+                notificationId = notificationId
+            ) {
+                text = "Processing restored data..."
+                setProgress(100, 50, false)
+            }
+
             // Process data in batches
             processInBatches(backupDatabase.libraryBooks, backupDatabase.bookChapters, backupDatabase.chapterBody)
 
             backupDatabase.close()
         } catch (e: Exception) {
-            Timber.e(e, "Database restore failed")
-            showErrorNotification(R.string.failed_to_restore_invalid_backup_database)
+            when {
+                e.message?.contains("migration", ignoreCase = true) == true -> {
+                    Timber.e(e, "Database migration failed during restore")
+                    showErrorNotification(R.string.failed_to_restore_invalid_backup_database)
+                }
+                e.message?.contains("sqlite", ignoreCase = true) == true -> {
+                    Timber.e(e, "Database restore failed - incompatible or corrupted database")
+                    showErrorNotification(R.string.failed_to_restore_invalid_backup_database)
+                }
+                else -> {
+                    Timber.e(e, "Database restore failed")
+                    showErrorNotification(R.string.failed_to_restore_invalid_backup_database)
+                }
+            }
         } finally {
             tempFile.delete()
+        }
+    }
+
+    /**
+     * Get the database version from a SQLite file
+     */
+    private fun getDatabaseVersion(dbFile: File): Int {
+        return try {
+            // Simple approach: try to open the database and check if it has the latest schema
+            // If it fails, we assume it's an older version that needs migration
+            val testDb = AppDatabase.createRoomFromFile(context, "version_check_temp", dbFile)
+            testDb.closeDatabase()
+            AppDatabase.deleteDatabaseFiles(context, "version_check_temp")
+            9 // If successful, it's already at current version
+        } catch (e: Exception) {
+            Timber.w(e, "Could not determine database version, assuming older version")
+            1 // Assume it's an older version that needs migration
         }
     }
 

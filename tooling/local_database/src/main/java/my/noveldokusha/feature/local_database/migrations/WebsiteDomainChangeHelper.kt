@@ -10,32 +10,58 @@ internal fun MigrationsList.websiteDomainChangeHelper(
 ) {
     // readlightnovel source changed its domain to "newDomain"
     fun replace(columnName: String) =
-        """SET $columnName = REPLACE($columnName, "$oldDomain", "$newDomain")"""
+        """$columnName = REPLACE($columnName, "$oldDomain", "$newDomain")"""
 
     fun like(columnName: String) =
         """($columnName LIKE "%$oldDomain%")"""
+
+    // For Chapter table, we need to handle primary key conflicts
+    // First, delete any existing chapters that would conflict with the new URLs
+    it.execSQL(
+        """
+            DELETE FROM Chapter 
+            WHERE url IN (
+                SELECT REPLACE(url, "$oldDomain", "$newDomain") 
+                FROM Chapter 
+                WHERE ${like("url")} OR ${like("bookUrl")}
+            ) AND NOT (${like("url")} OR ${like("bookUrl")})
+        """.trimIndent()
+    )
+
+    // For ChapterBody table, delete conflicting entries as well
+    it.execSQL(
+        """
+            DELETE FROM ChapterBody 
+            WHERE url IN (
+                SELECT REPLACE(url, "$oldDomain", "$newDomain") 
+                FROM ChapterBody 
+                WHERE ${like("url")}
+            ) AND NOT ${like("url")}
+        """.trimIndent()
+    )
+
     it.execSQL(
         """
             UPDATE Book
-                ${replace("url")},
-                ${replace("coverImageUrl")},
+            SET ${replace("url")},
+                ${replace("coverImageUrl")}
             WHERE
-                ${like("chapterUrl")};
+                ${like("url")};
         """.trimIndent()
     )
     it.execSQL(
         """
             UPDATE Chapter
-                ${replace("url")},
-                ${replace("bookUrl")},
+            SET ${replace("url")},
+                ${replace("bookUrl")}
             WHERE
-                ${like("bookUrl")};
+                ${like("url")} OR ${like("bookUrl")};
         """.trimIndent()
     )
     it.execSQL(
         """
             UPDATE ChapterBody
-                ${replace("url")},
+            SET ${replace("url")}
             WHERE
                 ${like("url")};
         """.trimIndent()

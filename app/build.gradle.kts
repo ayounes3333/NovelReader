@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.noveldokusha.android.compose)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.services)
 }
 
 inner class CLICustomSettings {
@@ -119,6 +120,9 @@ dependencies {
     implementation(projects.tooling.applicationWorkers)
     implementation(projects.tooling.localSource)
 
+    // Firebase sync - only for full flavor
+    fullImplementation(projects.tooling.firebaseSync)
+
     implementation(projects.features.reader)
     implementation(projects.features.chaptersList)
     implementation(projects.features.globalSourceSearch)
@@ -223,9 +227,14 @@ dependencies {
 
     // Logging
     implementation(libs.timber)
+
+    // Firebase - only for full flavor
+    fullImplementation(platform(libs.firebase.bom))
+    fullImplementation(libs.firebase.auth)
+    fullImplementation(libs.firebase.firestore)
+    fullImplementation(libs.firebase.analytics)
 }
 
 hilt {
     enableAggregatingTask = true
 }
-

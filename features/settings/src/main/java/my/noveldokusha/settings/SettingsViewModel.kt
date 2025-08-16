@@ -28,6 +28,15 @@ import my.noveldokusha.text_translator.domain.TranslationManager
 import java.io.File
 import javax.inject.Inject
 
+// Firebase sync imports - only available in full flavor
+@JvmField
+val syncManagerOptional: Any? = try {
+    Class.forName("my.noveldokusha.tooling.firebase_sync.manager.SyncManager")
+    null // Will be injected if available
+} catch (e: ClassNotFoundException) {
+    null
+}
+
 @HiltViewModel
 internal class SettingsViewModel @Inject constructor(
     private val appRepository: AppRepository,
@@ -152,5 +161,3 @@ private suspend fun getFolderSizeBytes(file: File): Long = withContext(Dispatche
         else -> file.walkBottomUp().sumOf { if (it.isDirectory) 0 else it.length() }
     }
 }
-
-

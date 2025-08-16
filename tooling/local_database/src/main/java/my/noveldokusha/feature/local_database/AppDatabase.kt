@@ -62,12 +62,15 @@ interface AppDatabase {
             // Copy the backup database file
             sourceFile.copyTo(target, overwrite = true)
 
-            // Open the database connection
+            // Open the database connection with migrations enabled
             return Room.databaseBuilder(
                 context,
                 AppRoomDatabase::class.java,
                 dbName
-            ).build()
+            )
+            .addMigrations(*databaseMigrations())
+            .build()
+            .also { it.name = dbName }
         }
 
         fun deleteDatabaseFiles(context: Context, dbName: String) {
@@ -91,7 +94,7 @@ interface AppDatabase {
         ChapterBody::class,
         NovelFileInfo::class
     ],
-    version = 6,
+    version = 9,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

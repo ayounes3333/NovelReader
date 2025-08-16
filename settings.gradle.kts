@@ -38,6 +38,7 @@ include(":tooling:text_to_speech")
 include(":tooling:backup_restore")
 include(":tooling:backup_create")
 include(":tooling:epub_importer")
+include(":tooling:firebase_sync")
 
 include(":features:reader")
 include(":features:chaptersList")

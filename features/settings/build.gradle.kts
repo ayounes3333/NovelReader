@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.noveldokusha.android.library)
     alias(libs.plugins.noveldokusha.android.compose)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -18,6 +20,12 @@ dependencies {
     implementation(projects.tooling.textTranslator.domain)
     implementation(projects.tooling.backupRestore)
     implementation(projects.tooling.backupCreate)
+    implementation(project(":tooling:firebase_sync"))
+
+    // Hilt dependencies for dependency injection
+    implementation(libs.hilt.android)
+    implementation(libs.androidx.hilt.navigation.compose)
+    ksp(libs.hilt.compiler)
 
     implementation(libs.compose.androidx.activity)
     implementation(libs.compose.material3.android)

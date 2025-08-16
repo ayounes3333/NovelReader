@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "681376307259",
+    "project_id": "noveldokusha-7f55e",
+    "storage_bucket": "noveldokusha-7f55e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:681376307259:android:7f8f046189d0948a9a241e",
+        "android_client_info": {
+          "package_name": "my.noveldokusha"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtJ7Vwj1lMW3vyu2AhY9RZxfGE4F6hJFc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

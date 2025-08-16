@@ -25,9 +25,34 @@ internal fun databaseMigrations() = arrayOf(
     migration(5, MigrationsList::readLightNovelDomainChange_1_today),
     migration(6, MigrationsList::readLightNovelDomainChange_2_meme),
     migration(7, MigrationsList::_1stKissNovelDomainChange_1_org),
+    migration(8) {
+        // Add timestamp tracking to Chapter table
+        it.execSQL("ALTER TABLE Chapter ADD COLUMN createdEpochTimeMilli INTEGER NOT NULL DEFAULT ${System.currentTimeMillis()}")
+        it.execSQL("ALTER TABLE Chapter ADD COLUMN lastUpdatedEpochTimeMilli INTEGER NOT NULL DEFAULT ${System.currentTimeMillis()}")
+
+        // Add timestamp tracking to ChapterBody table
+        it.execSQL("ALTER TABLE ChapterBody ADD COLUMN createdEpochTimeMilli INTEGER NOT NULL DEFAULT ${System.currentTimeMillis()}")
+        it.execSQL("ALTER TABLE ChapterBody ADD COLUMN lastUpdatedEpochTimeMilli INTEGER NOT NULL DEFAULT ${System.currentTimeMillis()}")
+    },
+    migration(6, 9) {
+        MigrationsList.readLightNovelDomainChange_2_meme(it)
+        MigrationsList._1stKissNovelDomainChange_1_org(it)
+        // Add timestamp tracking to Chapter table
+        it.execSQL("ALTER TABLE Chapter ADD COLUMN createdEpochTimeMilli INTEGER NOT NULL DEFAULT ${System.currentTimeMillis()}")
+        it.execSQL("ALTER TABLE Chapter ADD COLUMN lastUpdatedEpochTimeMilli INTEGER NOT NULL DEFAULT ${System.currentTimeMillis()}")
+
+        // Add timestamp tracking to ChapterBody table
+        it.execSQL("ALTER TABLE ChapterBody ADD COLUMN createdEpochTimeMilli INTEGER NOT NULL DEFAULT ${System.currentTimeMillis()}")
+        it.execSQL("ALTER TABLE ChapterBody ADD COLUMN lastUpdatedEpochTimeMilli INTEGER NOT NULL DEFAULT ${System.currentTimeMillis()}")
+    }
 )
 
 internal fun migration(vi: Int, migrate: (SupportSQLiteDatabase) -> Unit) =
     object : Migration(vi, vi + 1) {
+        override fun migrate(db: SupportSQLiteDatabase) = migrate(db)
+    }
+
+internal fun migration(start: Int, end: Int, migrate: (SupportSQLiteDatabase) -> Unit) =
+    object : Migration(start, end + 1) {
         override fun migrate(db: SupportSQLiteDatabase) = migrate(db)
     }

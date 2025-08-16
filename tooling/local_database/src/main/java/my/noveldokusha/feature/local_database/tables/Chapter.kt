@@ -11,5 +11,7 @@ data class Chapter(
     val position: Int,
     val read: Boolean = false,
     val lastReadPosition: Int = 0,
-    val lastReadOffset: Int = 0
+    val lastReadOffset: Int = 0,
+    val createdEpochTimeMilli: Long = System.currentTimeMillis(),
+    val lastUpdatedEpochTimeMilli: Long = System.currentTimeMillis()
 )

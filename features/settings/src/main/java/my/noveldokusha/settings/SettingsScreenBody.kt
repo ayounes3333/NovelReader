@@ -27,6 +27,7 @@ import my.noveldoksuha.coreui.theme.InternalTheme
 import my.noveldoksuha.coreui.theme.PreviewThemes
 import my.noveldoksuha.coreui.theme.Themes
 import my.noveldokusha.settings.sections.AppUpdates
+import my.noveldokusha.settings.sections.FirebaseSyncSection
 import my.noveldokusha.settings.sections.LibraryAutoUpdate
 import my.noveldokusha.settings.sections.SettingsBackup
 import my.noveldokusha.settings.sections.SettingsData
@@ -68,6 +69,8 @@ internal fun SettingsScreenBody(
             onBackupData = onBackupData,
             onRestoreData = onRestoreData
         )
+        HorizontalDivider()
+        FirebaseSyncSection()
         if (state.isTranslationSettingsVisible.value) {
             HorizontalDivider()
             SettingsTranslationModels(
