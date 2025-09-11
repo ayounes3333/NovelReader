@@ -27,12 +27,12 @@ import my.noveldoksuha.coreui.theme.InternalTheme
 import my.noveldoksuha.coreui.theme.PreviewThemes
 import my.noveldoksuha.coreui.theme.Themes
 import my.noveldokusha.settings.sections.AppUpdates
-import my.noveldokusha.settings.sections.FirebaseSyncSection
 import my.noveldokusha.settings.sections.LibraryAutoUpdate
 import my.noveldokusha.settings.sections.SettingsBackup
 import my.noveldokusha.settings.sections.SettingsData
 import my.noveldokusha.settings.sections.SettingsTheme
 import my.noveldokusha.settings.sections.SettingsTranslationModels
+import my.noveldokusha.settings.sections.SyncSettingsSection
 
 @Composable
 internal fun SettingsScreenBody(
@@ -70,7 +70,7 @@ internal fun SettingsScreenBody(
             onRestoreData = onRestoreData
         )
         HorizontalDivider()
-        FirebaseSyncSection()
+        SyncSettingsSection()
         if (state.isTranslationSettingsVisible.value) {
             HorizontalDivider()
             SettingsTranslationModels(

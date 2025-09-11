@@ -21,6 +21,7 @@ dependencies {
     implementation(projects.tooling.backupRestore)
     implementation(projects.tooling.backupCreate)
     implementation(project(":tooling:firebase_sync"))
+    implementation(projects.tooling.localServerSync)
 
     // Hilt dependencies for dependency injection
     implementation(libs.hilt.android)

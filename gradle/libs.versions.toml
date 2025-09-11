@@ -187,7 +187,6 @@ material = { module = "com.google.android.material:material", version.ref = "and
 # machine translations
 translate = { module = "com.google.mlkit:translate", version.ref = "translate" }
 
-# Logging
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 

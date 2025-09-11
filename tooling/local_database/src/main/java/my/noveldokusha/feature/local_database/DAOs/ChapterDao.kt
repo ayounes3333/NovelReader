@@ -89,4 +89,10 @@ interface ChapterDao {
     """
     )
     fun getChaptersWithContextFlow(bookUrl: String): Flow<List<ChapterWithContext>>
+
+    @Query("SELECT COUNT(*) FROM Chapter WHERE bookUrl = :bookUrl")
+    suspend fun chaptersCount(bookUrl: String): Int
+
+    @Query("SELECT COUNT(*) FROM Chapter WHERE bookUrl = :bookUrl AND read = 1")
+    suspend fun chaptersReadCount(bookUrl: String): Int
 }

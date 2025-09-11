@@ -122,6 +122,9 @@ dependencies {
 
     // Firebase sync - only for full flavor
     fullImplementation(projects.tooling.firebaseSync)
+    
+    // Local server sync - alternative to Firebase
+    implementation(projects.tooling.localServerSync)
 
     implementation(projects.features.reader)
     implementation(projects.features.chaptersList)
