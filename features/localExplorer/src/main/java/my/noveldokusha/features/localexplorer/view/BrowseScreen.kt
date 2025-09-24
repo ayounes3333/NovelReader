@@ -49,14 +49,15 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.Lifecycle
 import kotlinx.coroutines.launch
-import my.noveldoksuha.coreui.components.ErrorState
+import com.aliyounes.aurui.components.AurErrorView
+import com.aliyounes.aurui.components.AurErrorType
 import my.noveldoksuha.coreui.components.Loading
 import my.noveldoksuha.coreui.components.LoadingSnackbar
 import my.noveldoksuha.coreui.components.NoData
 import my.noveldoksuha.coreui.components.OnLifecycleEvent
 import my.noveldokusha.ui.composeViews.SearchBar
 import my.noveldoksuha.coreui.components.Viewing
-import my.noveldoksuha.coreui.theme.colorApp
+
 import my.noveldokusha.features.localexplorer.BrowseScreenState
 import my.noveldokusha.features.localexplorer.FileManager
 import my.noveldokusha.feature.local_database.tables.localexplorer.NovelFileInfo
@@ -117,6 +118,7 @@ fun BrowseScreen(
             Lifecycle.Event.ON_STOP -> {}
             Lifecycle.Event.ON_DESTROY -> {}
             Lifecycle.Event.ON_ANY -> {}
+            else -> {}
         }
     }
     
@@ -159,15 +161,14 @@ fun BrowseScreen(
                 }
                 is BrowseScreenState.Error -> {
                     uiState.error.printStackTrace()
-                    ErrorState(
-                        otherActionText = "Go Back",
-                        otherAction = {
-                            val destination: File? = FileManager.getCurrentDirectory()?.parentFile ?: FileManager.getStorageRoot()
-                            FileManager.goTo(destination)
-                        },
-                        retry =  {
+                    AurErrorView(
+                        errorType = AurErrorType.Custom,
+                        title = "Browse Error",
+                        message = "Unable to browse directory",
+                        onRetry = {
                             viewModel.browse(FileManager.getCurrentDirectory())
-                        }
+                        },
+                        retryText = "Try Again"
                     )
                 }
                 is BrowseScreenState.Loading -> {
@@ -202,7 +203,7 @@ fun FolderListItem(
         modifier = modifier
             .padding(8.dp)
             .fillMaxWidth()
-            .background(MaterialTheme.colorApp.bookSurface, RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp))
             .clickable {
                 if (directory.isDirectory)
                     onFolderClick(directory)
@@ -254,7 +255,7 @@ fun FolderGridItem(
             .padding(8.dp)
             .fillMaxWidth()
             .defaultMinSize(minWidth = 142.dp, minHeight = 250.dp)
-            .background(MaterialTheme.colorApp.bookSurface, RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp))
             .clickable {
                 if (directory.isDirectory)
                     onFolderClick(directory)
@@ -406,7 +407,7 @@ fun FilesHeader(
 
     Column(
         modifier = Modifier
-            .background(color = MaterialTheme.colorApp.tabSurface, shape = RoundedCornerShape(4.dp))
+            .background(color = MaterialTheme.colorScheme.surfaceContainerHigh, shape = RoundedCornerShape(4.dp))
             .fillMaxWidth()
             .padding(8.dp)
     ) {
@@ -518,7 +519,7 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
             .clickable { onBookClick(File(novelFileInfo.path)) }
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp)
-            .background(MaterialTheme.colorApp.bookSurface, RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp))
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -618,7 +619,7 @@ fun NovelFileGridItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
             .fillMaxWidth()
             .clickable { onBookClick(File(novelFileInfo.path)) }
             .padding(8.dp)
-            .background(MaterialTheme.colorApp.bookSurface, RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp))
             .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

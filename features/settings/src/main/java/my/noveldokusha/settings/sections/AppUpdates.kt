@@ -11,8 +11,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
+import com.aliyounes.aurui.components.AurSwitch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -52,16 +51,11 @@ internal fun AppUpdates(
                 )
             },
             trailingContent = {
-                Switch(
+                AurSwitch(
                     checked = state.appUpdateCheckerEnabled.value,
                     onCheckedChange = {
                         state.appUpdateCheckerEnabled.value = !state.appUpdateCheckerEnabled.value
-                    },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = ColorAccent,
-                        checkedBorderColor = MaterialTheme.colorScheme.onPrimary,
-                        uncheckedBorderColor = MaterialTheme.colorScheme.onPrimary,
-                    )
+                    }
                 )
             }
         )

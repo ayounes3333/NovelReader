@@ -13,5 +13,11 @@ val Project.libs
 fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? =
     add("implementation", dependencyNotation)
 
+fun DependencyHandler.debugImplementation(dependencyNotation: Any): Dependency? =
+    add("debugImplementation", dependencyNotation)
+
 fun DependencyHandler.testImplementation(dependencyNotation: Any): Dependency? =
     add("testImplementation", dependencyNotation)
+
+fun DependencyHandler.platform(dependencyNotation: Any): Dependency =
+    create(dependencyNotation)

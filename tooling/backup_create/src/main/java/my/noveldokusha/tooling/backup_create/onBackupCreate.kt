@@ -24,7 +24,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import my.noveldoksuha.coreui.components.MyButton
+import com.aliyounes.aurui.components.AurButton
+import com.aliyounes.aurui.components.AurButtonType
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -81,9 +82,8 @@ fun onBackupCreate(): () -> Unit {
                                 .weight(1f)
                         )
                     }
-                    MyButton(
+                    AurButton(
                         text = stringResource(id = R.string.backup),
-                        textAlign = TextAlign.Center,
                         onClick = {
                             showDialog = false
                             val pattern = "yyyy-MM-dd_HH-mm"
@@ -91,10 +91,8 @@ fun onBackupCreate(): () -> Unit {
                             val fileName = "noveldokusha_backup_$date.zip"
                             fileExplorer.launch(fileName)
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
-                            .padding(top = 12.dp)
+                        type = AurButtonType.Primary,
+                        fullWidth = true
                     )
                 }
             }

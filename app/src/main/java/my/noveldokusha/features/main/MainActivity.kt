@@ -17,6 +17,10 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -28,6 +32,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import com.aliyounes.aurui.ui.theme.AurUITheme
+import com.aliyounes.aurui.components.*
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import dagger.hilt.android.AndroidEntryPoint
@@ -42,15 +48,11 @@ import my.noveldokusha.libraryexplorer.LibraryScreen
 import my.noveldokusha.settings.SettingsScreen
 import my.noveldokusha.tooling.epub_importer.EpubImportService
 
-private data class Page(
-    @DrawableRes val iconRes: Int,
-    @StringRes val stringRes: Int,
-)
-
-private val pages = listOf(
-    Page(iconRes = R.drawable.ic_baseline_home_24, stringRes = R.string.title_library),
-    Page(iconRes = R.drawable.ic_baseline_menu_book_24, stringRes = R.string.title_finder),
-    Page(iconRes = R.drawable.ic_twotone_settings_24, stringRes = R.string.title_settings),
+// Convert pages to AurTabItem format
+private fun getTabItems(): List<AurTabItem> = listOf(
+    AurTabItem("Library", Icons.Default.Home),
+    AurTabItem("Finder", Icons.Default.MenuBook),
+    AurTabItem("Settings", Icons.Default.Settings)
 )
 
 
@@ -72,12 +74,13 @@ open class MainActivity : BaseActivity() {
 
         setContent {
             var activePageIndex by rememberSaveable { mutableIntStateOf(0) }
+            val tabs = getTabItems()
 
             BackHandler(enabled = activePageIndex != 0) {
                 activePageIndex = 0
             }
 
-            Theme(themeProvider = themeProvider) {
+            AurUITheme {
                 Column(Modifier.fillMaxSize()) {
                     Box(Modifier.weight(1f)) {
                         AnimatedTransition(targetState = activePageIndex) {
@@ -88,23 +91,12 @@ open class MainActivity : BaseActivity() {
                             }
                         }
                     }
-                    NavigationBar {
-                        pages.forEachIndexed { pageIndex, page ->
-                            NavigationBarItem(
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(id = page.iconRes),
-                                        contentDescription = stringResource(id = page.stringRes)
-                                    )
-                                },
-                                label = { Text(stringResource(id = page.stringRes)) },
-                                selected = activePageIndex == pageIndex,
-                                onClick = {
-                                    activePageIndex = pageIndex
-                                },
-                            )
-                        }
-                    }
+                    AurTabBar(
+                        selectedIndex = activePageIndex,
+                        onTabSelected = { activePageIndex = it },
+                        tabs = tabs,
+                        style = AurTabBarStyle.Pill
+                    )
                 }
             }
         }

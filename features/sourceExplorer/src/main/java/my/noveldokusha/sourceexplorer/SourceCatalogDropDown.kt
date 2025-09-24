@@ -16,7 +16,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import my.noveldoksuha.coreui.components.MyButton
+import com.aliyounes.aurui.components.AurButton
+import com.aliyounes.aurui.components.AurButtonType
 import my.noveldokusha.core.appPreferences.ListLayoutMode
 
 @Composable
@@ -39,25 +40,19 @@ internal fun SourceCatalogDropDown(
         ) {
             Text(text = stringResource(R.string.layout))
             OutlinedCard {
-                MyButton(
+                AurButton(
                     text = stringResource(id = R.string.list),
                     onClick = { onListLayoutModeChange(ListLayoutMode.VerticalList) },
-                    selected = listLayoutMode == ListLayoutMode.VerticalList,
-                    borderWidth = Dp.Unspecified,
-                    textAlign = TextAlign.Center,
-                    outerPadding = 0.dp,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(0.dp),
+                    type = if (listLayoutMode == ListLayoutMode.VerticalList) AurButtonType.Primary else AurButtonType.Outlined,
+                    fullWidth = true,
+                    cornerRadius = 0.dp
                 )
-                MyButton(
+                AurButton(
                     text = stringResource(id = R.string.grid),
                     onClick = { onListLayoutModeChange(ListLayoutMode.VerticalGrid) },
-                    selected = listLayoutMode == ListLayoutMode.VerticalGrid,
-                    borderWidth = Dp.Unspecified,
-                    textAlign = TextAlign.Center,
-                    outerPadding = 0.dp,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(0.dp),
+                    type = if (listLayoutMode == ListLayoutMode.VerticalGrid) AurButtonType.Primary else AurButtonType.Outlined,
+                    fullWidth = true,
+                    cornerRadius = 0.dp
                 )
             }
         }

@@ -6,8 +6,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import com.aliyounes.aurui.components.AurToolbar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,29 +22,12 @@ import my.noveldokusha.tooling.backup_restore.onBackupRestore
 fun SettingsScreen() {
     val viewModel: SettingsViewModel = viewModel()
 
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
-        snapAnimationSpec = null,
-        flingAnimationSpec = null
-    )
-
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             Column {
-                TopAppBar(
-                    scrollBehavior = scrollBehavior,
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Unspecified,
-                        scrolledContainerColor = Color.Unspecified,
-                    ),
-                    title = {
-                        Text(
-                            text = stringResource(id = R.string.title_settings),
-                            style = MaterialTheme.typography.headlineSmall
-                        )
-                    }
+                AurToolbar(
+                    title = stringResource(id = R.string.title_settings)
                 )
-                CollapsibleDivider(scrollBehavior.state)
             }
         },
         content = { innerPadding ->
