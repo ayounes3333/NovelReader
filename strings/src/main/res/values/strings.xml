@@ -49,6 +49,22 @@
     <string name="search_by_title">Search by title</string>
     <string name="clean_images_folder">Clean images folder</string>
     <string name="preserve_only_images_from_library_books">Preserve only images from library books</string>
+    
+    <!-- Scraper Testing Section -->
+    <string name="scraper_testing_title">Scraper Testing</string>
+    <string name="test_sources">Test Sources</string>
+    <string name="test_databases">Test Databases</string>
+    <string name="test_all_scrapers">Test All</string>
+    <string name="testing_in_progress">Testing in progress…</string>
+    <string name="scraper_test_results">Test Results</string>
+    <string name="sources_count">Sources (%d)</string>
+    <string name="databases_count">Databases (%d)</string>
+    <string name="test_summary_total">Total</string>
+    <string name="test_summary_success">Success</string>
+    <string name="test_summary_failed">Failed</string>
+    <string name="scraper_test_success">✓ Working</string>
+    <string name="scraper_test_error">✗ Error</string>
+    <string name="response_time_ms">%dms</string>
     <string name="images_total_size">Images total size:</string>
     <string name="follow_system">Follow system</string>
     <string name="sources_languages">Sources languages</string>
@@ -66,6 +82,7 @@
     <string name="open_the_web_view">Open the web view</string>
     <string name="search_for_title">Search for title</string>
     <string name="search_here">Search here</string>
+    <string name="search_chapters">Search chapters</string>
     <string name="catalog">Catalog</string>
     <string name="open_for_more_options">Open for more options</string>
     <string name="list">List</string>

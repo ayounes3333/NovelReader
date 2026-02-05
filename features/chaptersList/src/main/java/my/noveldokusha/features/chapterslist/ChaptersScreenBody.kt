@@ -72,7 +72,7 @@ internal fun ChaptersScreenBody(
                     sourceCatalogName = stringResource(
                         id = state.sourceCatalogNameStrRes.value ?: R.string.invalid_source
                     ),
-                    numberOfChapters = state.chapters.size,
+                    numberOfChapters = state.filteredChapters.value.size,
                     paddingValues = innerPadding,
                     modifier = Modifier.padding(bottom = 12.dp),
                     onCoverLongClick = onCoverLongClick,
@@ -81,7 +81,7 @@ internal fun ChaptersScreenBody(
             }
 
             items(
-                items = state.chapters,
+                items = state.filteredChapters.value,
                 key = { "_" + it.chapter.url },
                 contentType = { 1 }
             ) {

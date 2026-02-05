@@ -28,6 +28,7 @@ import my.noveldoksuha.coreui.theme.PreviewThemes
 import my.noveldoksuha.coreui.theme.Themes
 import my.noveldokusha.settings.sections.AppUpdates
 import my.noveldokusha.settings.sections.LibraryAutoUpdate
+import my.noveldokusha.settings.sections.ScraperTestingSection
 import my.noveldokusha.settings.sections.SettingsBackup
 import my.noveldokusha.settings.sections.SettingsData
 import my.noveldokusha.settings.sections.SettingsTheme
@@ -47,6 +48,15 @@ internal fun SettingsScreenBody(
     onDownloadTranslationModel: (lang: String) -> Unit,
     onRemoveTranslationModel: (lang: String) -> Unit,
     onCheckForUpdatesManual: () -> Unit,
+    // Scraper testing parameters
+    scraperTestingSources: List<my.noveldokusha.settings.sections.ScraperTestResult> = emptyList(),
+    scraperTestingDatabases: List<my.noveldokusha.settings.sections.ScraperTestResult> = emptyList(),
+    scraperTestingInProgress: Boolean = false,
+    onTestSources: () -> Unit = {},
+    onTestDatabases: () -> Unit = {},
+    onTestAllScrapers: () -> Unit = {},
+    onTestIndividualSource: (String) -> Unit = {},
+    onTestIndividualDatabase: (String) -> Unit = {},
 ) {
     Column(
         modifier = modifier.verticalScroll(rememberScrollState()),
@@ -85,6 +95,17 @@ internal fun SettingsScreenBody(
         AppUpdates(
             state = state.updateAppSetting,
             onCheckForUpdatesManual = onCheckForUpdatesManual
+        )
+        HorizontalDivider()
+        ScraperTestingSection(
+            sources = scraperTestingSources,
+            databases = scraperTestingDatabases,
+            isTestingInProgress = scraperTestingInProgress,
+            onTestSources = onTestSources,
+            onTestDatabases = onTestDatabases,
+            onTestAll = onTestAllScrapers,
+            onTestIndividualSource = onTestIndividualSource,
+            onTestIndividualDatabase = onTestIndividualDatabase
         )
         Spacer(modifier = Modifier.height(500.dp))
         Text(
@@ -141,6 +162,11 @@ private fun Preview() {
                 onDownloadTranslationModel = { },
                 onRemoveTranslationModel = { },
                 onCheckForUpdatesManual = { },
+                onTestSources = { },
+                onTestDatabases = { },
+                onTestAllScrapers = { },
+                onTestIndividualSource = { },
+                onTestIndividualDatabase = { },
             )
         }
     }

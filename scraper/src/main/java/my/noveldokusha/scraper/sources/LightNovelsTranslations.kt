@@ -92,7 +92,7 @@ class LightNovelsTranslations(
                 if (page > 1) {
                     addPath("page", page.toString())
                 }
-                add("sortby", "highest-rated")
+                add("sortby", "most-liked")
             }
 
             networkClient.get(url).toDocument()

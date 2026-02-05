@@ -19,9 +19,20 @@ internal data class ChaptersScreenState(
     val settingChapterSort: MutableState<TernaryState>,
     val isLocalSource: State<Boolean>,
     val isRefreshable: State<Boolean>,
+    val searchQuery: MutableState<String>,
 ) {
 
     val isInSelectionMode = derivedStateOf { selectedChaptersUrl.size != 0 }
+
+    val filteredChapters = derivedStateOf {
+        if (searchQuery.value.isBlank()) {
+            chapters.toList()
+        } else {
+            chapters.filter { chapter ->
+                chapter.chapter.title.contains(searchQuery.value, ignoreCase = true)
+            }
+        }
+    }
 
     data class BookState(
         val title: String,

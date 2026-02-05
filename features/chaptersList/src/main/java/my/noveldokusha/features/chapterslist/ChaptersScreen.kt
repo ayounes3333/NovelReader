@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RemoveDone
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.Delete
@@ -44,6 +45,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -101,6 +104,7 @@ internal fun ChaptersScreen(
 ) {
     var showDropDown by rememberSaveable { mutableStateOf(false) }
     var showBottomSheet by rememberSaveable { mutableStateOf(false) }
+    var showSearchBar by rememberSaveable { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val lazyListState = rememberLazyListState()
     val areSelectedChaptersRead = state.selectedChaptersUrl.keys.all { url ->
@@ -109,6 +113,17 @@ internal fun ChaptersScreen(
 
     if (state.isInSelectionMode.value) BackHandler {
         onCloseSelectionBar()
+    }
+
+    if (showSearchBar) BackHandler {
+        showSearchBar = false
+        state.searchQuery.value = ""
+    }
+
+    // Close search bar when entering selection mode
+    if (state.isInSelectionMode.value && showSearchBar) {
+        showSearchBar = false
+        state.searchQuery.value = ""
     }
 
     Scaffold(
@@ -150,6 +165,16 @@ internal fun ChaptersScreen(
                             }
                         },
                         actions = {
+                            if (!showSearchBar) {
+                                IconButton(
+                                    onClick = { showSearchBar = true }
+                                ) {
+                                    Icon(
+                                        Icons.Filled.Search,
+                                        stringResource(R.string.search_chapters)
+                                    )
+                                }
+                            }
                             IconButton(
                                 onClick = onLibraryToggle
                             ) {
@@ -192,6 +217,40 @@ internal fun ChaptersScreen(
                         }
                     )
                     HorizontalDivider(Modifier.alpha(alpha))
+
+                    AnimatedVisibility(
+                        visible = showSearchBar,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        TextField(
+                            value = state.searchQuery.value,
+                            onValueChange = { state.searchQuery.value = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            placeholder = { Text(stringResource(R.string.search_chapters)) },
+                            leadingIcon = {
+                                Icon(Icons.Filled.Search, contentDescription = null)
+                            },
+                            trailingIcon = {
+                                if (state.searchQuery.value.isNotEmpty()) {
+                                    IconButton(onClick = { state.searchQuery.value = "" }) {
+                                        Icon(Icons.Outlined.Close, contentDescription = null)
+                                    }
+                                } else {
+                                    IconButton(onClick = { showSearchBar = false }) {
+                                        Icon(Icons.Outlined.Close, contentDescription = null)
+                                    }
+                                }
+                            },
+                            singleLine = true,
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                            )
+                        )
+                    }
                 }
             }
             AnimatedVisibility(

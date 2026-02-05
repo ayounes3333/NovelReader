@@ -341,7 +341,6 @@ fun Files(viewing: Viewing, browseData: BrowseData, isLoading: Boolean = false, 
                         ) {
                             items(
                                 count = browseData.browsable.size,
-                                key = { index -> browseData.browsable[index].file.absolutePath }
                             ) { index ->
                                 val item = browseData.browsable[index]
                                 if (item.isDirectory) {
@@ -365,7 +364,6 @@ fun Files(viewing: Viewing, browseData: BrowseData, isLoading: Boolean = false, 
                         ) {
                             items(
                                 count = browseData.browsable.size,
-                                key = { index -> browseData.browsable[index].file.absolutePath }
                             ) { index ->
                                 val item = browseData.browsable[index]
                                 if (item.isDirectory) {

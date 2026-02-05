@@ -76,7 +76,8 @@ internal class ChaptersViewModel @Inject constructor(
         sourceCatalogNameStrRes = mutableStateOf(source?.nameStrId),
         settingChapterSort = appPreferences.CHAPTERS_SORT_ASCENDING.state(viewModelScope),
         isLocalSource = mutableStateOf(bookUrl.isLocalUri),
-        isRefreshable = mutableStateOf(rawBookUrl.isContentUri || !bookUrl.isLocalUri)
+        isRefreshable = mutableStateOf(rawBookUrl.isContentUri || !bookUrl.isLocalUri),
+        searchQuery = mutableStateOf("")
     )
 
     init {

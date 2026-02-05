@@ -17,5 +17,15 @@ dependencies {
     implementation(libs.jsoup)
     implementation(libs.gson)
     implementation(libs.okhttp)
+    
+    // Testing dependencies
+    testImplementation(libs.test.junit)
+    testImplementation(libs.test.kotlinx.coroutines)
+    testImplementation(libs.test.mockk)
+    testImplementation(libs.test.androidx.arch.core)
+    testImplementation(libs.okhttp.mockwebserver)
+    
     androidTestImplementation(libs.test.androidx.espresso.core)
+    androidTestImplementation(libs.test.androidx.junit)
+    androidTestImplementation(libs.test.androidx.runner)
 }

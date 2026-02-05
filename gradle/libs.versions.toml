@@ -20,9 +20,12 @@ zip4j = "2.11.1"
 
 kotlinx-coroutines-core = "1.8.1"
 kotlinx-coroutines-playServices = "1.8.1"
+kotlinx-coroutines-test = "1.8.1"
 kotlinx-serialization-json = "1.7.3"
 
 testing-mockito-kotlin = "5.0.0"
+testing-mockk = "1.13.8"
+testing-arch-core = "2.2.0"
 
 androidTools = "31.5.1"
 
@@ -123,6 +126,7 @@ retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit
 okhttp-interceptor-logging = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "okhttp-interceptor-logging" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 okhttp-interceptor-brotli = { module = "com.squareup.okhttp3:okhttp-brotli", version.ref = "okhttp" }
+okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp" }
 okhttp-glideIntegration = { module = "com.github.bumptech.glide:okhttp3-integration", version.ref = "okhttp-glideIntegration" }
 
 # Data manipulation (html, serialization, ...)
@@ -138,9 +142,13 @@ crux = { module = "com.chimbori.crux:crux", version.ref = "crux" }
 
 # Testing
 test-mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "testing-mockito-kotlin" }
+test-mockk = { module = "io.mockk:mockk", version.ref = "testing-mockk" }
 test-junit = { module = "junit:junit", version.ref = "junit" }
+test-kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
+test-androidx-arch-core = { module = "androidx.arch.core:core-testing", version.ref = "testing-arch-core" }
 test-androidx-orchestrator = { module = "androidx.test:orchestrator", version.ref = "androidx-testing-orchestrator" }
 test-androidx-junit-ktx = { module = "androidx.test.ext:junit-ktx", version.ref = "androidx-testing-junit" }
+test-androidx-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-testing-junit" }
 test-androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidx-testing-espresso" }
 test-androidx-runner = { module = "androidx.test:runner", version.ref = "androidx-testing-runner" }
 test-androidx-rules = { module = "androidx.test:rules", version.ref = "androidx-testing-rules" }
