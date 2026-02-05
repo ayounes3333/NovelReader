@@ -12,13 +12,21 @@ import my.noveldokusha.features.localexplorer.FileManager
 import java.io.File
 import javax.inject.Inject
 
+data class BrowseResult(
+    val browsables: List<Browsable>,
+    val parents: List<File>
+)
+
 class BrowseRepository @Inject constructor(
     private val db: AppDatabase
 ) : BrowseModule.Repository {
 
-    override suspend fun browse(file: File?): Flow<List<Browsable>?> {
+    override suspend fun browse(file: File?): Flow<BrowseResult?> {
         val directory = file ?: FileManager.getCurrentDirectory()
         return if (directory != null && directory.isDirectory) {
+            // Calculate parents once on background thread
+            val parents = FileManager.getParents(directory)
+
             getThenUpdateFlow(cached = {
                 val directories = FileManager.goTo(directory)
                     .filter { it.isDirectory }
@@ -31,10 +39,13 @@ class BrowseRepository @Inject constructor(
                         Browsable(File(novelFileInfo.path), novelFileInfo)
                     }
                     .toList()
-                ArrayList<Browsable>().apply {
-                    addAll(directories)
-                    addAll(files)
-                }
+                BrowseResult(
+                    browsables = ArrayList<Browsable>().apply {
+                        addAll(directories)
+                        addAll(files)
+                    },
+                    parents = parents
+                )
             }, server = {
                 val all = FileManager.goTo(directory)
                 val directories = all
@@ -51,10 +62,13 @@ class BrowseRepository @Inject constructor(
                         Browsable(selectedFile, fileInfo)
                     }
                     .toList()
-                ArrayList<Browsable>().apply {
-                    addAll(directories)
-                    addAll(files)
-                }
+                BrowseResult(
+                    browsables = ArrayList<Browsable>().apply {
+                        addAll(directories)
+                        addAll(files)
+                    },
+                    parents = parents
+                )
             })
         } else {
             throw Exception("Missing File Access Permissions!")

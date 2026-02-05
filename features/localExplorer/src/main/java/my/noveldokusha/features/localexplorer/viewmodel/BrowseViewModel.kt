@@ -10,12 +10,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectIndexed
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import my.noveldokusha.features.localexplorer.BrowseScreenState
 import my.noveldokusha.features.localexplorer.FileManager
 import my.noveldokusha.features.localexplorer.model.Browsable
 import my.noveldokusha.features.localexplorer.model.BrowseRepository
+import my.noveldokusha.features.localexplorer.model.BrowseResult
 import java.io.File
 import javax.inject.Inject
 
@@ -69,49 +71,49 @@ class BrowseViewModel @Inject constructor (private val browseRepository: BrowseR
 
     fun browse(directory: File?, query: String = "") {
         uiState = BrowseScreenState.Loading(BrowseData(emptyList(), emptyList()))
-        viewModelScope.launch(context = Dispatchers.IO) {
-
+        viewModelScope.launch {
             try {
-                browseRepository.browse(directory).collectIndexed { index, value ->
-                    value?.let {
-                        val filtered = value.filter { file ->
-                            query.isEmpty() ||
-                                    file.file.name.contains(query, ignoreCase = true) ||
-                                    file.novelFileInfo?.title?.contains(
-                                        query,
-                                        ignoreCase = true
-                                    ) == true ||
-                                    file.novelFileInfo?.author?.contains(
-                                        query,
-                                        ignoreCase = true
-                                    ) == true ||
-                                    file.novelFileInfo?.id?.contains(
-                                        query,
-                                        ignoreCase = true
-                                    ) == true ||
-                                    file.novelFileInfo?.tags?.reduceOrNull { acc, s ->
-                                        "$acc $s"
-                                    }?.contains(query, ignoreCase = true) == true
-                        }
-                        if (index == 0) { //Cached
-                            withContext(Dispatchers.Main) {
-                                uiState = BrowseScreenState.Loading(
-                                    BrowseData(filtered, browseRepository.getParentDirectories())
-                                )
+                browseRepository.browse(directory)
+                    .map { result ->
+                        // Filter on background thread
+                        result?.let {
+                            val filtered = it.browsables.filter { file ->
+                                query.isEmpty() ||
+                                        file.file.name.contains(query, ignoreCase = true) ||
+                                        file.novelFileInfo?.title?.contains(
+                                            query,
+                                            ignoreCase = true
+                                        ) == true ||
+                                        file.novelFileInfo?.author?.contains(
+                                            query,
+                                            ignoreCase = true
+                                        ) == true ||
+                                        file.novelFileInfo?.id?.contains(
+                                            query,
+                                            ignoreCase = true
+                                        ) == true ||
+                                        file.novelFileInfo?.tags?.joinToString(" ")
+                                            ?.contains(query, ignoreCase = true) == true
                             }
-                        } else {
-                            withContext(Dispatchers.Main) {
+                            BrowseResult(filtered, it.parents)
+                        }
+                    }
+                    .flowOn(Dispatchers.Default) // Use Default for CPU-intensive filtering
+                    .collectIndexed { index, result ->
+                        result?.let {
+                            if (index == 0) { //Cached
+                                uiState = BrowseScreenState.Loading(
+                                    BrowseData(it.browsables, it.parents)
+                                )
+                            } else {
                                 uiState = BrowseScreenState.Data(
-                                    BrowseData(filtered, browseRepository.getParentDirectories())
+                                    BrowseData(it.browsables, it.parents)
                                 )
                             }
                         }
                     }
-                }
             } catch (error: Exception) {
-                withContext(Dispatchers.Main) {
-                    uiState = BrowseScreenState.Error(error)
-                }
+                uiState = BrowseScreenState.Error(error)
             }
         }
     }

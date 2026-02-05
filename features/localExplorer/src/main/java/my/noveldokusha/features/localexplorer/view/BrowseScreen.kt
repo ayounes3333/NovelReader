@@ -1,4 +1,4 @@
-package my.noveldoksha.features.localexplorer.view
+package my.noveldokusha.features.localexplorer.view
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -34,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
@@ -46,9 +47,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.Lifecycle
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.aliyounes.aurui.components.AurErrorView
 import com.aliyounes.aurui.components.AurErrorType
 import my.noveldoksuha.coreui.components.Loading
@@ -193,10 +195,15 @@ fun FolderListItem(
     directory: File,
     onFolderClick: (directory: File) -> Unit = {}
 ) {
-    val isEmpty = remember(directory) {
-        directory.listFiles()?.isEmpty() ?: true
+    var isEmpty by remember(directory) { mutableStateOf(false) }
+    var content by remember(directory) { mutableStateOf("") }
+
+    LaunchedEffect(directory) {
+        withContext(Dispatchers.IO) {
+            isEmpty = directory.listFiles()?.isEmpty() ?: true
+            content = directory.content
+        }
     }
-    val content = remember(directory) { directory.content }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -230,11 +237,13 @@ fun FolderListItem(
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Text(
-                text = content,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            if (content.isNotEmpty()) {
+                Text(
+                    text = content,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
     }
 }
@@ -245,10 +254,15 @@ fun FolderGridItem(
     directory: File,
     onFolderClick: (directory: File) -> Unit = {}
 ) {
-    val isEmpty = remember(directory) {
-        directory.listFiles()?.isEmpty() ?: true
+    var isEmpty by remember(directory) { mutableStateOf(false) }
+    var content by remember(directory) { mutableStateOf("") }
+
+    LaunchedEffect(directory) {
+        withContext(Dispatchers.IO) {
+            isEmpty = directory.listFiles()?.isEmpty() ?: true
+            content = directory.content
+        }
     }
-    val content = remember(directory) { directory.content }
 
     ConstraintLayout(
         modifier = modifier
@@ -261,7 +275,7 @@ fun FolderGridItem(
                     onFolderClick(directory)
             }
     ) {
-        val (icon, content) = createRefs()
+        val (icon, contentRef) = createRefs()
         Icon(
             modifier = Modifier
                 .size(72.dp)
@@ -270,7 +284,7 @@ fun FolderGridItem(
                     linkTo(
                         top = parent.top,
                         topMargin = 8.dp,
-                        bottom = content.top,
+                        bottom = contentRef.top,
                         bottomMargin = 8.dp
                     )
                     linkTo(
@@ -294,7 +308,7 @@ fun FolderGridItem(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .padding(8.dp)
-                .constrainAs(content) {
+                .constrainAs(contentRef) {
                     bottom.linkTo(parent.bottom, margin = 8.dp)
                     start.linkTo(parent.start, margin = 8.dp)
                     end.linkTo(parent.end, margin = 8.dp)
@@ -307,11 +321,13 @@ fun FolderGridItem(
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Text(
-                text = directory.content,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            if (content.isNotEmpty()) {
+                Text(
+                    text = content,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
     }
 }
@@ -341,6 +357,10 @@ fun Files(viewing: Viewing, browseData: BrowseData, isLoading: Boolean = false, 
                         ) {
                             items(
                                 count = browseData.browsable.size,
+                                key = { index -> browseData.browsable[index].file.absolutePath },
+                                contentType = { index ->
+                                    if (browseData.browsable[index].isDirectory) "folder" else "book"
+                                }
                             ) { index ->
                                 val item = browseData.browsable[index]
                                 if (item.isDirectory) {
@@ -364,6 +384,10 @@ fun Files(viewing: Viewing, browseData: BrowseData, isLoading: Boolean = false, 
                         ) {
                             items(
                                 count = browseData.browsable.size,
+                                key = { index -> browseData.browsable[index].file.absolutePath },
+                                contentType = { index ->
+                                    if (browseData.browsable[index].isDirectory) "folder" else "book"
+                                }
                             ) { index ->
                                 val item = browseData.browsable[index]
                                 if (item.isDirectory) {
@@ -503,8 +527,16 @@ fun FilesHeader(
 
 @Composable
 fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) -> Unit) {
+    // Load cover asynchronously to prevent UI freeze
+    var novelCover by remember(novelFileInfo.path) { mutableStateOf<my.noveldokusha.feature.local_database.tables.localexplorer.Cover?>(null) }
+
+    LaunchedEffect(novelFileInfo.path) {
+        withContext(Dispatchers.Default) {
+            novelCover = novelFileInfo.cover.invoke()
+        }
+    }
+
     // Cache expensive computations
-    val novelCover = remember(novelFileInfo.path) { novelFileInfo.cover.invoke() }
     val fileInfoText = remember(novelFileInfo.path) {
         "${novelFileInfo.dateFormatted} ${novelFileInfo.fileSize}"
     }
@@ -521,14 +553,29 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Cover image
-        Image(
-            bitmap = novelCover.bitmap.asImageBitmap(),
-            contentDescription = novelCover.text,
-            modifier = Modifier
-                .size(width = 72.dp, height = 100.dp)
-                .clip(RoundedCornerShape(4.dp))
-        )
+        // Cover image with placeholder
+        if (novelCover != null) {
+            Image(
+                bitmap = novelCover!!.bitmap.asImageBitmap(),
+                contentDescription = novelCover!!.text,
+                modifier = Modifier
+                    .size(width = 72.dp, height = 100.dp)
+                    .clip(RoundedCornerShape(4.dp))
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(width = 72.dp, height = 100.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp
+                )
+            }
+        }
 
         // Content
         Column(
@@ -603,8 +650,16 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
 
 @Composable
 fun NovelFileGridItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) -> Unit) {
+    // Load cover asynchronously to prevent UI freeze
+    var novelCover by remember(novelFileInfo.path) { mutableStateOf<my.noveldokusha.feature.local_database.tables.localexplorer.Cover?>(null) }
+
+    LaunchedEffect(novelFileInfo.path) {
+        withContext(Dispatchers.Default) {
+            novelCover = novelFileInfo.cover.invoke()
+        }
+    }
+
     // Cache expensive computations
-    val novelCover = remember(novelFileInfo.path) { novelFileInfo.cover.invoke() }
     val fileInfoText = remember(novelFileInfo.path) {
         "${novelFileInfo.dateFormatted} ${novelFileInfo.fileSize}"
     }
@@ -621,15 +676,29 @@ fun NovelFileGridItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
             .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Cover image
-        Image(
-            bitmap = novelCover.bitmap.asImageBitmap(),
-            contentDescription = novelCover.text,
-            modifier = Modifier
-                .size(width = 120.dp, height = 160.dp)
-                .clip(RoundedCornerShape(4.dp))
-        )
-
+        // Cover image with placeholder
+        if (novelCover != null) {
+            Image(
+                bitmap = novelCover!!.bitmap.asImageBitmap(),
+                contentDescription = novelCover!!.text,
+                modifier = Modifier
+                    .size(width = 120.dp, height = 160.dp)
+                    .clip(RoundedCornerShape(4.dp))
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(width = 120.dp, height = 160.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(32.dp),
+                    strokeWidth = 3.dp
+                )
+            }
+        }
         // Title
         Text(
             text = novelFileInfo.title.truncateMiddle(30),
