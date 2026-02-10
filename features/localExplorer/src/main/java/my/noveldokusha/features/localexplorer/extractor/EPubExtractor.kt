@@ -228,7 +228,7 @@ class EPubExtractor(private val file: File) : BaseExtractor(file) {
             }
             if (cover != null) FileManager.saveNovelCover(filename, cover)
         }
-        return Cover(cover ?: textAsBitmap(getNovelTitle(), 14.spToPx.toFloat()), getNovelTitle())
+        return Cover(bitmap = cover ?: textAsBitmap(getNovelTitle(), 14.spToPx.toFloat()), text = getNovelTitle())
     }
 
     override fun getNovelChapters(): List<ChapterInfo> = chapters

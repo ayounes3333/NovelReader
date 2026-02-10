@@ -12,6 +12,12 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
@@ -104,8 +110,16 @@ internal fun LibraryScreenBody(
                         val title by remember { derivedStateOf { text } }
                         Tab(
                             selected = selected,
-                            text = { Text(title, color = MaterialTheme.colorScheme.onPrimary) },
-                            onClick = { scope.launch { pagerState.animateScrollToPage(index) } }
+                            text = {
+                                Text(
+                                    text = title,
+                                    color = if (selected)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.onPrimary
+                                )
+                                   },
+                            onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
                         )
                     }
                 },

@@ -13,11 +13,26 @@ import javax.xml.parsers.DocumentBuilderFactory
 
 internal val NodeList.elements get() = (0..length).asSequence().mapNotNull { item(it) as? Element }
 internal val Node.childElements get() = childNodes.elements
-internal fun Document.selectFirstTag(tag: String): Node? = getElementsByTagName(tag).item(0)
-internal fun Node.selectFirstChildTag(tag: String) = childElements.find { it.tagName == tag }
-internal fun Node.selectChildTag(tag: String) = childElements.filter { it.tagName == tag }
+internal fun Document.selectFirstTag(tag: String): Node? =
+    getElementsByTagName(tag).item(0) ?:
+    getElementsByTagName("ns0:$tag").item(0) ?:
+    getElementsByTagName("opf:$tag").item(0) ?:
+    getElementsByTagName("dc:$tag").item(0)
+internal fun Node.selectFirstChildTag(tag: String) =
+    childElements.find { it.tagName == tag } ?:
+    childElements.find { it.tagName == "ns0:$tag" } ?:
+    childElements.find { it.tagName == "opf:$tag" } ?:
+    childElements.find { it.tagName == "dc:$tag" }
+internal fun Node.selectChildTag(tag: String) =
+    childElements.filter { it.tagName == tag }.toList().takeIf { it.isNotEmpty() } ?:
+    childElements.filter { it.tagName == "ns0:$tag" }.toList().takeIf { it.isNotEmpty() } ?:
+    childElements.filter { it.tagName == "opf:$tag" }.toList().takeIf { it.isNotEmpty() } ?:
+    childElements.filter { it.tagName == "dc:$tag" }.toList().takeIf { it.isNotEmpty() } ?: emptyList()
 internal fun Node.getAttributeValue(attribute: String): String? =
-    attributes?.getNamedItem(attribute)?.textContent
+    attributes?.getNamedItem(attribute)?.textContent ?:
+    attributes?.getNamedItem("ns0:$attribute")?.textContent ?:
+    attributes?.getNamedItem("opf:$attribute")?.textContent ?:
+    attributes?.getNamedItem("dc:$attribute")?.textContent
 
 internal fun parseXMLFile(inputSteam: InputStream): Document? =
     DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(inputSteam)

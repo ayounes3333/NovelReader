@@ -42,16 +42,12 @@ suspend fun epubParser(
     val document = parseXMLFile(opfFile.data)
         ?: throw Exception(".opf file failed to parse data")
     val metadata = document.selectFirstTag("metadata")
-        ?: document.selectFirstTag("ns0:metadata")
         ?: throw Exception(".opf file metadata section missing")
     val manifest = document.selectFirstTag("manifest")
-        ?: document.selectFirstTag("ns0:manifest")
         ?: throw Exception(".opf file manifest section missing")
     val spine = document.selectFirstTag("spine")
-        ?: document.selectFirstTag("ns0:spine")
         ?: throw Exception(".opf file spine section missing")
     val guide = document.selectFirstTag("guide")
-        ?: document.selectFirstTag("ns0:guide")
     val metadataTitle = metadata.selectFirstChildTag("dc:title")?.textContent
         ?: "Unknown Title"
     val metadataCreator = metadata.selectFirstChildTag("dc:creator")?.textContent
@@ -62,10 +58,6 @@ suspend fun epubParser(
         .selectChildTag("meta")
         .find { it.getAttributeValue("name") == "cover" }
         ?.getAttributeValue("content")
-        ?: metadata
-            .selectChildTag("ns0:meta")
-            .find { it.getAttributeValue("name") == "cover" }
-            ?.getAttributeValue("content")
 
 
     val hrefRootPath = File(opfFilePath).parentFile ?: File("")
@@ -74,8 +66,7 @@ suspend fun epubParser(
         .invariantSeparatorsPathString
         .removePrefix("/")
 
-    val items = manifest.selectChildTag("item").takeIf { it.count() > 0 }
-        ?: manifest.selectChildTag("ns0:item")
+    val items = manifest.selectChildTag("item")
     val manifestItems = items.map {
         ManifestItem(
             id = it.getAttribute("id"),
@@ -163,8 +154,7 @@ suspend fun epubParser(
     var currentTOC: ToCEntry? = null
     var currentChapterBody = ""
 
-    val itemRefs = spine.selectChildTag("itemref").takeIf { it.count() > 0 }
-        ?: spine.selectChildTag("ns0:itemref")
+    val itemRefs = spine.selectChildTag("itemref")
     itemRefs.forEach { itemRef ->
         val itemId = itemRef.getAttribute("idref")
         val spineItem = manifestItems[itemId]

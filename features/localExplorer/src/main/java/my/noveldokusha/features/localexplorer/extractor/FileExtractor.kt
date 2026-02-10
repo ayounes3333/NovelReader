@@ -4,13 +4,15 @@ import my.noveldokusha.core.utils.spToPx
 import my.noveldokusha.feature.local_database.tables.localexplorer.ChapterInfo
 import my.noveldokusha.feature.local_database.tables.localexplorer.Cover
 import my.noveldokusha.feature.local_database.BitmapUtils.textAsBitmap
+import my.noveldokusha.features.localexplorer.extractor.utils.vectorIcon
 import java.io.File
 
 class FileExtractor(private val file: File) : BaseExtractor(file) {
     override fun getNovelCover(): Cover {
         return Cover(
-            bitmap = textAsBitmap(getNovelTitle(), 14.spToPx.toFloat()),
-            text = getNovelTitle()
+            bitmap = null,
+            text = getNovelTitle(),
+            vector = file.vectorIcon
         )
     }
 
