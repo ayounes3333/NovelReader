@@ -63,6 +63,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.aliyounes.aurui.components.AurTextField
 import my.nanihadesuka.compose.InternalLazyColumnScrollbar
 import my.noveldoksuha.coreui.theme.ColorAccent
 import my.noveldoksuha.coreui.theme.ColorLike
@@ -223,32 +224,22 @@ internal fun ChaptersScreen(
                         enter = expandVertically() + fadeIn(),
                         exit = shrinkVertically() + fadeOut()
                     ) {
-                        TextField(
+                        AurTextField(
                             value = state.searchQuery.value,
                             onValueChange = { state.searchQuery.value = it },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp),
-                            placeholder = { Text(stringResource(R.string.search_chapters)) },
-                            leadingIcon = {
-                                Icon(Icons.Filled.Search, contentDescription = null)
-                            },
-                            trailingIcon = {
+                            placeholder = stringResource(R.string.search_chapters),
+                            leadingIcon = Icons.Filled.Search,
+                            trailingIcon =
                                 if (state.searchQuery.value.isNotEmpty()) {
-                                    IconButton(onClick = { state.searchQuery.value = "" }) {
-                                        Icon(Icons.Outlined.Close, contentDescription = null)
-                                    }
+                                    Icons.Outlined.Close
                                 } else {
-                                    IconButton(onClick = { showSearchBar = false }) {
-                                        Icon(Icons.Outlined.Close, contentDescription = null)
-                                    }
+                                    null
                                 }
-                            },
+                            ,
                             singleLine = true,
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                            )
                         )
                     }
                 }

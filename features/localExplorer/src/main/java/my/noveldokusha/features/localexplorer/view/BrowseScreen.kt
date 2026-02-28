@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -552,7 +554,7 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
                 contentDescription = novelCover!!.text,
                 modifier = Modifier
                     .size(width = 72.dp, height = 100.dp)
-                    .clip(RoundedCornerShape(4.dp))
+                    .clip(RoundedCornerShape(8.dp))
             )
         } ?: novelCover?.vector?.let { id ->
             Image(
@@ -560,7 +562,7 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
                 contentDescription = novelCover!!.text,
                 modifier = Modifier
                     .size(width = 72.dp, height = 100.dp)
-                    .clip(RoundedCornerShape(4.dp))
+                    .clip(RoundedCornerShape(8.dp))
             )
         } ?: run {
             Box(
@@ -581,13 +583,13 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 12.dp)
+                .padding(horizontal = 8.dp)
         ) {
             Text(
-                text = novelFileInfo.title.truncateMiddle(50),
-                fontSize = 16.sp,
+                text = novelFileInfo.title.truncateMiddle(75),
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                maxLines = 2,
+                maxLines = 3,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
@@ -605,47 +607,48 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
             ) {
                 Text(
                     text = fileInfoText,
-                    fontSize = 12.sp,
+                    fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
 
                 if (progressText.isNotEmpty()) {
                     Text(
                         text = progressText,
-                        fontSize = 12.sp,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(start = 8.dp)
                     )
                 }
+                Spacer(modifier = Modifier.weight(1f))
+
+                // Actions
+                Row {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(
+                            id = if (novelFileInfo.isFavorite) R.drawable.ic_star else R.drawable.ic_star_border
+                        ),
+                        contentDescription = "Favorite",
+                        tint = if (novelFileInfo.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(
+                            alpha = 0.6f
+                        ),
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable { /* Handle favorite toggle */ }
+                            .padding(vertical = 4.dp)
+                    )
+
+                    Icon(
+                        imageVector = ImageVector.vectorResource(id = R.drawable.ic_outline_delete_24),
+                        contentDescription = "Delete",
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable { /* Handle delete */ }
+                            .padding(vertical = 4.dp)
+                    )
+                }
             }
-        }
-
-        // Actions
-        Row {
-            Icon(
-                imageVector = ImageVector.vectorResource(
-                    id = if (novelFileInfo.isFavorite) R.drawable.ic_star else R.drawable.ic_star_border
-                ),
-                contentDescription = "Favorite",
-                tint = if (novelFileInfo.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(
-                    alpha = 0.6f
-                ),
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable { /* Handle favorite toggle */ }
-                    .padding(4.dp)
-            )
-
-            Icon(
-                imageVector = ImageVector.vectorResource(id = R.drawable.ic_outline_delete_24),
-                contentDescription = "Delete",
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable { /* Handle delete */ }
-                    .padding(4.dp)
-            )
         }
     }
 }
