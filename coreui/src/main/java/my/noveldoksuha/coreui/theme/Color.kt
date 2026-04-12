@@ -4,9 +4,22 @@ package my.noveldoksuha.coreui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val ColorAccent = Color(0xFF2A59B6)
-val ColorLike = Color(0xFFF44336)
+// Brand accent — Material You Indigo/Violet
+val ColorAccent = Color(0xFF6650A4)
+val ColorLike = Color(0xFFE53935)
 val ColorNotice = Color(0xFFE48800)
+
+// Material You Indigo tonal ramp
+val Indigo10 = Color(0xFF21005D)
+val Indigo20 = Color(0xFF381E72)
+val Indigo30 = Color(0xFF4F378B)
+val Indigo40 = Color(0xFF6650A4)
+val Indigo50 = Color(0xFF7F67BE)
+val Indigo60 = Color(0xFF9A82DB)
+val Indigo70 = Color(0xFFB69DF8)
+val Indigo80 = Color(0xFFD0BCFF)
+val Indigo90 = Color(0xFFEADDFF)
+val Indigo95 = Color(0xFFF6EDFF)
 
 val Grey0 = Color(0xFFFFFFFF)
 val Grey25 = Color(0xFFFEFEFE)

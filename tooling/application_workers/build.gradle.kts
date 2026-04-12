@@ -12,12 +12,16 @@ dependencies {
     implementation(projects.coreui)
     implementation(projects.strings)
     implementation(projects.data)
+    implementation(projects.networking)
+    implementation(projects.scraper)
     implementation(projects.navigation)
     implementation(projects.tooling.localDatabase)
 
     implementation(libs.timber)
     implementation(libs.androidx.workmanager)
     implementation(libs.hilt.workmanager)
+    implementation(projects.tooling.epubParser)
+    implementation(libs.okhttp)
 
     implementation(libs.compose.androidx.activity)
     implementation(libs.compose.material3.android)

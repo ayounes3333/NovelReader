@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import my.noveldoksuha.interactor.WorkersInteractions
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -45,6 +46,7 @@ internal class ChaptersViewModel @Inject constructor(
     private val downloaderRepository: DownloaderRepository,
     private val chaptersRepository: ChaptersRepository,
     private val epubImporterRepository: EpubImporterRepository,
+    private val workersInteractions: WorkersInteractions,
     stateHandle: SavedStateHandle,
 ) : BaseViewModel(), ChapterStateBundle {
 
@@ -313,5 +315,14 @@ internal class ChaptersViewModel @Inject constructor(
         val inverse = (allChaptersUrl - selectedUrl).asSequence().associateWith { }
         state.selectedChaptersUrl.clear()
         state.selectedChaptersUrl.putAll(inverse)
+    }
+
+    fun exportAsEpub() {
+        if (state.isLocalSource.value) return
+        workersInteractions.exportBookToEpub(
+            bookUrl = bookUrl,
+            bookTitle = bookTitle,
+        )
+        toasty.show(R.string.epub_export_started)
     }
 }

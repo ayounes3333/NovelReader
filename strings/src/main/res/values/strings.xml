@@ -184,6 +184,7 @@
     <string name="language_spanish">Spanish</string>
     <string name="language_french">French</string>
     <string name="language_indonesian">Indonesian</string>
+    <string name="language_arabic">Arabic</string>
     <string name="source_name_local">Local</string>
     <string name="updating_library">Updating library (%1$d/%2$d)</string>
     <string name="notification_channel_name_reader_narrator">Reader narrator</string>
@@ -198,6 +199,8 @@
     <string name="backup_restored">Backup restored</string>
     <string name="keep_screen_on">Keep screen on</string>
     <string name="change_cover">Change cover</string>
+    <string name="export_as_epub">Export as EPUB</string>
+    <string name="epub_export_started">EPUB export started — check your Downloads folder</string>
 	<string name="app_updates">App updates</string>
     <string name="automatically_check_for_app_updates">Automatically check for app updates</string>
     <string name="check_for_app_updates_now">Check for app updates now</string>

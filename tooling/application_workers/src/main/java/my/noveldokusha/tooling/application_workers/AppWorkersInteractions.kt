@@ -19,4 +19,10 @@ internal class AppWorkersInteractions @Inject constructor(
             LibraryUpdatesWorker.createManualRequest(updateCategory = libraryCategory)
         ).enqueue()
     }
+
+    override fun exportBookToEpub(bookUrl: String, bookTitle: String) {
+        workManager.enqueue(
+            EpubExportWorker.createRequest(bookUrl = bookUrl, bookTitle = bookTitle)
+        )
+    }
 }

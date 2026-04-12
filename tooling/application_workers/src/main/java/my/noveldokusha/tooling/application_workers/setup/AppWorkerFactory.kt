@@ -8,7 +8,10 @@ import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import my.noveldoksuha.coreui.states.NotificationsCenter
 import my.noveldoksuha.data.AppRemoteRepository
+import my.noveldoksuha.data.DownloaderRepository
 import my.noveldoksuha.interactor.LibraryUpdatesInteractions
+import my.noveldokusha.network.NetworkClient
+import my.noveldokusha.tooling.application_workers.EpubExportWorker
 import my.noveldokusha.tooling.application_workers.LibraryUpdatesWorker
 import my.noveldokusha.tooling.application_workers.UpdatesCheckerWorker
 import my.noveldokusha.tooling.application_workers.notifications.LibraryUpdateNotification
@@ -19,6 +22,8 @@ class AppWorkerFactory @Inject internal constructor(
     private val notificationsCenter: NotificationsCenter,
     private val libraryUpdateNotification: LibraryUpdateNotification,
     private val libraryUpdatesInteractions: LibraryUpdatesInteractions,
+    private val downloaderRepository: DownloaderRepository,
+    private val networkClient: NetworkClient,
 ) : WorkerFactory() {
     @SuppressLint("LogNotTimber")
     override fun createWorker(
@@ -40,6 +45,12 @@ class AppWorkerFactory @Inject internal constructor(
                 workerParameters = workerParameters,
                 libraryUpdateNotification = libraryUpdateNotification,
                 libraryUpdatesInteractions = libraryUpdatesInteractions,
+            )
+            EpubExportWorker::class.java.name -> EpubExportWorker(
+                context = appContext,
+                workerParameters = workerParameters,
+                downloaderRepository = downloaderRepository,
+                networkClient = networkClient,
             )
             else -> null
         }

@@ -28,5 +28,18 @@
     <string translatable="false" name="source_name_novelbin">NovelBin</string>
     <string translatable="false" name="source_name_novelku">NovelKu</string>
     <string translatable="false" name="source_name_wb_novel">Wb Novel</string>
+    <!-- Sources imported from QuickNovel -->
+    <string translatable="false" name="source_name_allnovel">AllNovel</string>
+    <string translatable="false" name="source_name_novel_full">NovelFull</string>
+    <string translatable="false" name="source_name_novel_full_net">NovelFull-Net</string>
+    <string translatable="false" name="source_name_libread">LibRead</string>
+    <string translatable="false" name="source_name_free_web_novel">FreeWebNovel</string>
+    <string translatable="false" name="source_name_mtlnovel_me">MtlNovel.me</string>
+    <string translatable="false" name="source_name_scribblehub">Scribblehub</string>
+    <string translatable="false" name="source_name_kol_novel">KolNovel</string>
+    <string translatable="false" name="source_name_pawread">PawRead</string>
+    <string translatable="false" name="source_name_novlove">NovLove</string>
+    <string translatable="false" name="source_name_novels_online">NovelsOnline</string>
+    <string translatable="false" name="source_name_hiraeth_translation">HiraethTranslation</string>
 
 </resources>

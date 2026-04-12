@@ -102,6 +102,7 @@ internal fun ChaptersScreen(
     onChangeCover: () -> Unit,
     onOpenInBrowser: (url: String) -> Unit,
     onGlobalSearchClick: (input: String) -> Unit,
+    onExportAsEpub: () -> Unit,
 ) {
     var showDropDown by rememberSaveable { mutableStateOf(false) }
     var showBottomSheet by rememberSaveable { mutableStateOf(false) }
@@ -212,6 +213,10 @@ internal fun ChaptersScreen(
                                         onSearchBookInDatabase = onSearchBookInDatabase,
                                         onResumeReading = onResumeReading,
                                         onChangeCover = onChangeCover,
+                                        onExportAsEpub = {
+                                            showDropDown = false
+                                            onExportAsEpub()
+                                        },
                                     )
                                 }
                             }

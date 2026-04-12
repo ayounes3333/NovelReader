@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,7 +21,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
@@ -61,6 +63,7 @@ fun BookImageButtonView(
                 .padding(4.dp)
                 .fillMaxWidth()
                 .aspectRatio(1 / 1.45f)
+                .shadow(elevation = 6.dp, shape = ImageBorderShape)
                 .clip(ImageBorderShape)
                 .background(MaterialTheme.colorApp.bookSurface)
                 .combinedClickable(
@@ -78,6 +81,7 @@ fun BookImageButtonView(
                 error = R.drawable.default_book_cover,
             )
             if (bookTitlePosition == BookTitlePosition.Inside) {
+                // Cinematic black scrim
                 Text(
                     text = title,
                     textAlign = TextAlign.Center,
@@ -86,12 +90,13 @@ fun BookImageButtonView(
                         .align(Alignment.BottomCenter)
                         .background(
                             Brush.verticalGradient(
-                                0f to MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.0f),
-                                0.4f to MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
-                                1f to MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                                0f to Color.Transparent,
+                                0.4f to Color.Black.copy(alpha = 0f),
+                                0.75f to Color.Black.copy(alpha = 0.55f),
+                                1f to Color.Black.copy(alpha = 0.88f),
                             )
                         )
-                        .padding(top = 30.dp, bottom = 8.dp)
+                        .padding(top = 36.dp, bottom = 12.dp)
                         .padding(horizontal = 8.dp),
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.ExtraBold,
@@ -109,7 +114,7 @@ fun BookImageButtonView(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.BottomCenter)
-                        .padding(top = 30.dp, bottom = 8.dp)
+                        .padding(top = 36.dp, bottom = 12.dp)
                         .padding(horizontal = 8.dp),
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.ExtraBold,
@@ -124,8 +129,9 @@ fun BookImageButtonView(
                 maxLines = 2,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp)
-                    .padding(4.dp),
+                    .wrapContentHeight()
+                    .padding(horizontal = 4.dp)
+                    .padding(vertical = 4.dp),
                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.ExtraBold),
                 textAlign = TextAlign.Center,
                 overflow = TextOverflow.Ellipsis,

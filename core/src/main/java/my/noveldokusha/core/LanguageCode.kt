@@ -16,5 +16,6 @@ enum class LanguageCode(
     SPANISH(iso639_1 = "es", nameResId = R.string.language_spanish),
     @Suppress("unused")
     FRENCH(iso639_1 = "fr", nameResId = R.string.language_french),
-    INDONESIAN(iso639_1 = "id", nameResId = R.string.language_indonesian)
+    INDONESIAN(iso639_1 = "id", nameResId = R.string.language_indonesian),
+    ARABIC(iso639_1 = "ar", nameResId = R.string.language_arabic)
 }

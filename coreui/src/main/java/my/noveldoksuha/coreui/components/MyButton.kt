@@ -54,7 +54,7 @@ fun MyButton(
     minHeight: Dp = selectableMinHeight,
     shape: Shape = MaterialTheme.shapes.small,
     borderWidth: Dp = 1.dp,
-    borderColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+    borderColor: Color = MaterialTheme.colorScheme.outlineVariant,
     backgroundColor: Color = MaterialTheme.colorScheme.primary,
     textStyle: TextStyle = LocalTextStyle.current,
     selected: Boolean = false,

@@ -69,7 +69,8 @@ class ChaptersActivity : BaseActivity() {
                     onCoverLongClick = { searchBookInDatabase(input = viewModel.bookTitle) },
                     onChangeCover = onDoAskForImage { viewModel.saveImageAsCover(it) },
                     onOpenInBrowser = { navigationRoutes.webView(this, url = it).let(::startActivity) },
-                    onGlobalSearchClick = { navigationRoutes.globalSearch(this, text = it).let(::startActivity) }
+                    onGlobalSearchClick = { navigationRoutes.globalSearch(this, text = it).let(::startActivity) },
+                    onExportAsEpub = viewModel::exportAsEpub,
                 )
             }
         }

@@ -19,8 +19,8 @@ data class AppColor(
 )
 
 val light_appColor = AppColor(
-    tabSurface = Grey75,
-    bookSurface = Grey75,
+    tabSurface = Indigo90,
+    bookSurface = Indigo95,
     checkboxPositive = Success500,
     checkboxNegative = Error500,
     checkboxNeutral = Grey900,
@@ -29,7 +29,7 @@ val light_appColor = AppColor(
 )
 
 val dark_appColor = AppColor(
-    tabSurface = Grey800,
+    tabSurface = Color(0xFF2A2535),
     bookSurface = Grey800,
     checkboxPositive = Success500,
     checkboxNegative = Error500,
@@ -39,7 +39,7 @@ val dark_appColor = AppColor(
 )
 
 val black_appColor = AppColor(
-    tabSurface = Grey900,
+    tabSurface = Indigo20,
     bookSurface = Grey900,
     checkboxPositive = Success500,
     checkboxNegative = Error500,
