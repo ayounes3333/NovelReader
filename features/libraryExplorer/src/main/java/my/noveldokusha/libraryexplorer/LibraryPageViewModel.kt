@@ -16,7 +16,36 @@ import my.noveldokusha.core.appPreferences.AppPreferences
 import my.noveldokusha.core.appPreferences.TernaryState
 import my.noveldokusha.core.domain.LibraryCategory
 import my.noveldokusha.core.utils.toState
+import my.noveldokusha.feature.local_database.BookWithContext
 import javax.inject.Inject
+
+data class BookGroup(
+    val seriesTitle: String,
+    val books: List<BookWithContext>,
+) {
+    val representative: BookWithContext
+        get() = books.maxByOrNull { it.book.lastReadEpochTimeMilli } ?: books[0]
+}
+
+private val seriesSuffixRegex = Regex(
+    """[\s\-–—:]+(?:vol(?:ume)?\.?\s*\d+|book\s*\d+|part\s*\d+|\d+)\.?\s*$""",
+    RegexOption.IGNORE_CASE
+)
+
+fun String.extractSeriesTitle(): String {
+    val stripped = replace(seriesSuffixRegex, "")
+        .trimEnd { it == '-' || it == '–' || it == '—' || it == ':' || it == ' ' }
+    return stripped.ifEmpty { this }
+}
+
+fun List<BookWithContext>.groupBySeries(): List<BookGroup> {
+    val groups = LinkedHashMap<String, MutableList<BookWithContext>>()
+    for (book in this) {
+        val key = book.book.title.extractSeriesTitle()
+        groups.getOrPut(key) { mutableListOf() }.add(book)
+    }
+    return groups.map { (key, books) -> BookGroup(key, books) }
+}
 
 @HiltViewModel
 internal class LibraryPageViewModel @Inject constructor(
@@ -35,13 +64,11 @@ internal class LibraryPageViewModel @Inject constructor(
 
     private fun createPageList(type: LibraryListType) = appRepository.libraryBooks
         .getBooksInLibraryWithContextFlow
-        .map {
-            it.filter { book ->
-                if (type == LibraryListType.FAVORITES)
-                    book.book.inLibrary
-                else
-                    true
-            }
+        .map { list ->
+            if (type == LibraryListType.FAVORITES)
+                list  // all books in library
+            else
+                list.filter { it.book.lastReadEpochTimeMilli > 0 }  // only books that have been read
         }
         .combine(preferences.LIBRARY_FILTER_READ.flow()) { list, filterRead ->
             when (filterRead) {

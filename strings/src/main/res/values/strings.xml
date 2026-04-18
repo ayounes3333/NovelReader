@@ -218,4 +218,6 @@
     <string name="cloudfare_firewall_failed_bypass">Cloudfare firewall failed bypass</string>
     <string name="tried_but_failed_to_bypass_cloudfare_firewall">Tried but failed to bypass cloudfare firewall</string>
 	<string name="features_reader_full_screen">Full screen</string>
+    <string name="group_series">Group by series</string>
+    <string name="select_book_from_series">Select book</string>
 </resources>

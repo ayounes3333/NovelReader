@@ -121,6 +121,9 @@ class AppPreferences @Inject constructor(
             TernaryState.Inverse
         ) { enumValueOf(it) }
     }
+    val LIBRARY_GROUP_SERIES = object : Preference<Boolean>("LIBRARY_GROUP_SERIES") {
+        override var value by SharedPreference_Boolean(name, preferences, false)
+    }
     val BOOKS_LIST_LAYOUT_MODE = object : Preference<ListLayoutMode>("BOOKS_LIST_LAYOUT_MODE") {
         override var value by SharedPreference_Enum(
             name,

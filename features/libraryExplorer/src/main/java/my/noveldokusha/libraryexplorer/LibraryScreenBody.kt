@@ -12,12 +12,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Icon
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
@@ -41,11 +35,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
-import my.noveldokusha.features.localexplorer.view.BrowseScreen
 import my.noveldoksuha.coreui.components.CollapsibleDivider
 import my.noveldoksuha.coreui.theme.colorApp
 import my.noveldokusha.core.domain.LibraryCategory
 import my.noveldokusha.feature.local_database.BookWithContext
+import my.noveldokusha.features.localexplorer.view.BrowseScreen
 import my.noveldokusha.features.localexplorer.viewmodel.BrowseViewModel
 import my.noveldokusha.tooling.epub_importer.EpubImportService
 
@@ -64,6 +58,7 @@ internal fun LibraryScreenBody(
     viewModel: LibraryPageViewModel = viewModel(),
     browseViewModel: BrowseViewModel = viewModel()
 ) {
+    val libraryModel: LibraryViewModel = viewModel()
     val tabsSizeUpdated = rememberUpdatedState(newValue = tabs.size)
 
     val pagerState = rememberPagerState(
@@ -84,6 +79,26 @@ internal fun LibraryScreenBody(
             )
         }
     )
+
+    // Search-filtered and optionally grouped lists
+    val filteredGroupedFavorites by remember {
+        derivedStateOf {
+            val sq = libraryModel.searchQuery
+            val gs = libraryModel.groupSeries
+            val list = if (sq.isEmpty()) viewModel.listFavorites
+            else viewModel.listFavorites.filter { it.book.title.contains(sq, ignoreCase = true) }
+            if (gs) list.groupBySeries() else list.map { BookGroup(it.book.title, listOf(it)) }
+        }
+    }
+    val filteredGroupedRecent by remember {
+        derivedStateOf {
+            val sq = libraryModel.searchQuery
+            val gs = libraryModel.groupSeries
+            val list = if (sq.isEmpty()) viewModel.listRecent
+            else viewModel.listRecent.filter { it.book.title.contains(sq, ignoreCase = true) }
+            if (gs) list.groupBySeries() else list.map { BookGroup(it.book.title, listOf(it)) }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -131,17 +146,11 @@ internal fun LibraryScreenBody(
                 state = pagerState,
                 verticalAlignment = Alignment.Top,
             ) { page ->
-                // TODO: improve + make more generic (use database table?)
-                val showCompleted by remember {
-                    derivedStateOf {
-                        tabs[page] == "Completed"
-                    }
-                }
-                val list: List<BookWithContext> by remember {
+                val list: List<BookGroup> by remember {
                     derivedStateOf {
                         when (page) {
-                            1 -> viewModel.listFavorites
-                            2 -> viewModel.listRecent
+                            1 -> filteredGroupedFavorites
+                            2 -> filteredGroupedRecent
                             else -> emptyList()
                         }
                     }

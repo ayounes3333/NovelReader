@@ -1,6 +1,7 @@
 package my.noveldokusha.libraryexplorer
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
@@ -26,8 +27,12 @@ internal class LibraryViewModel @Inject constructor(
     )
     var showBottomSheet by stateHandle.asMutableStateOf("showBottomSheet") { false }
 
+    var searchQuery by mutableStateOf("")
+    var isSearchActive by mutableStateOf(false)
+
     var readFilter by appPreferences.LIBRARY_FILTER_READ.state(viewModelScope)
     var readSort by appPreferences.LIBRARY_SORT_LAST_READ.state(viewModelScope)
+    var groupSeries by appPreferences.LIBRARY_GROUP_SERIES.state(viewModelScope)
 
     fun readFilterToggle() {
         readFilter = readFilter.next()
@@ -35,6 +40,10 @@ internal class LibraryViewModel @Inject constructor(
 
     fun readSortToggle() {
         readSort = readSort.next()
+    }
+
+    fun groupSeriesToggle() {
+        groupSeries = !groupSeries
     }
 
     fun bookCompletedToggle(bookUrl: String) {

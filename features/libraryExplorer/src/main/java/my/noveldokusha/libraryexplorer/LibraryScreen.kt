@@ -1,8 +1,19 @@
 package my.noveldokusha.libraryexplorer
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,7 +33,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.aliyounes.aurui.components.AurTextField
 import my.noveldoksuha.coreui.components.BookSettingsDialog
 import my.noveldoksuha.coreui.components.BookSettingsDialogState
 import my.noveldoksuha.coreui.theme.ColorNotice
@@ -43,45 +56,77 @@ fun LibraryScreen(
         flingAnimationSpec = null
     )
 
+    if (libraryModel.isSearchActive) BackHandler {
+        libraryModel.isSearchActive = false
+        libraryModel.searchQuery = ""
+    }
+
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface,
-                ),
-                title = {
-                    Text(
-                        text = stringResource(id = R.string.app_name),
-                        style = MaterialTheme.typography.headlineSmall
+            Column {
+                TopAppBar(
+                    scrollBehavior = scrollBehavior,
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surface,
+                    ),
+                    title = {
+                        Text(
+                            text = stringResource(id = R.string.app_name),
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = { libraryModel.isSearchActive = true }
+                        ) {
+                            Icon(
+                                Icons.Filled.Search,
+                                stringResource(R.string.search_by_title)
+                            )
+                        }
+                        IconButton(
+                            onClick = { libraryModel.showBottomSheet = !libraryModel.showBottomSheet }
+                        ) {
+                            Icon(
+                                Icons.Filled.FilterList,
+                                stringResource(R.string.filter),
+                                tint = ColorNotice
+                            )
+                        }
+                        IconButton(
+                            onClick = { showDropDown = !showDropDown }
+                        ) {
+                            Icon(
+                                Icons.Filled.MoreVert,
+                                stringResource(R.string.options_panel)
+                            )
+                            LibraryDropDown(
+                                expanded = showDropDown,
+                                onDismiss = { showDropDown = false }
+                            )
+                        }
+                    }
+                )
+                AnimatedVisibility(
+                    visible = libraryModel.isSearchActive,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    AurTextField(
+                        value = libraryModel.searchQuery,
+                        onValueChange = { libraryModel.searchQuery = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        placeholder = stringResource(R.string.search_by_title),
+                        leadingIcon = Icons.Filled.Search,
+                        trailingIcon = if (libraryModel.searchQuery.isNotEmpty()) Icons.Outlined.Close else null,
+                        singleLine = true,
                     )
-                },
-                actions = {
-                    IconButton(
-                        onClick = { libraryModel.showBottomSheet = !libraryModel.showBottomSheet }
-                    ) {
-                        Icon(
-                            Icons.Filled.FilterList,
-                            stringResource(R.string.filter),
-                            tint = ColorNotice
-                        )
-                    }
-                    IconButton(
-                        onClick = { showDropDown = !showDropDown }
-                    ) {
-                        Icon(
-                            Icons.Filled.MoreVert,
-                            stringResource(R.string.options_panel)
-                        )
-                        LibraryDropDown(
-                            expanded = showDropDown,
-                            onDismiss = { showDropDown = false }
-                        )
-                    }
                 }
-            )
+            }
         },
         content = { innerPadding ->
             LibraryScreenBody(
