@@ -103,6 +103,36 @@ class LocalServerApiService @Inject constructor(
         )
     }
 
+    suspend fun getCompleteSync(authToken: String): SyncResponse {
+        return makeAuthenticatedRequest(
+            endpoint = "/api/sync/complete",
+            method = "GET",
+            authToken = authToken
+        )
+    }
+
+    /**
+     * Ping the server to check if it's reachable. Returns true if the server responds.
+     * Uses a short timeout to avoid blocking during network scans.
+     */
+    suspend fun pingServer(serverUrl: String? = null): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val url = serverUrl ?: getBaseUrl()
+            val pingClient = OkHttpClient.Builder()
+                .connectTimeout(3, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(3, java.util.concurrent.TimeUnit.SECONDS)
+                .build()
+            val request = Request.Builder()
+                .url("$url/api/ping")
+                .get()
+                .build()
+            val response = pingClient.newCall(request).execute()
+            response.isSuccessful
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     private suspend fun makeRequest(
         endpoint: String,
         method: String,

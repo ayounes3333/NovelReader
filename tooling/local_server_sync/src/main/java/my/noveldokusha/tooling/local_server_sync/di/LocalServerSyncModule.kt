@@ -15,6 +15,7 @@ import my.noveldokusha.tooling.local_server_sync.repository.LocalServerSyncRepos
 import my.noveldokusha.tooling.local_server_sync.storage.AuthTokenStorage
 import my.noveldokusha.tooling.local_server_sync.manager.LocalServerSyncManager
 import my.noveldokusha.tooling.local_server_sync.image.LocalServerImageService
+import my.noveldokusha.tooling.local_server_sync.sync.WiFiSyncScheduler
 import my.noveldokusha.feature.local_database.AppDatabase
 import my.noveldokusha.core.AppFileResolver
 import javax.inject.Singleton
@@ -46,9 +47,8 @@ object LocalServerSyncModule {
     @Singleton
     fun provideLocalServerSyncRepository(
         apiService: LocalServerApiService,
-        authService: LocalServerAuthService,
-        json: Json
-    ): LocalServerSyncRepository = LocalServerSyncRepository(apiService, authService, json)
+        authService: LocalServerAuthService
+    ): LocalServerSyncRepository = LocalServerSyncRepository(apiService, authService)
 
     @Provides
     @Singleton
@@ -71,4 +71,11 @@ object LocalServerSyncModule {
         @ApplicationContext context: Context,
         appFileResolver: AppFileResolver
     ): LocalServerImageService = LocalServerImageService(context, appFileResolver)
+
+    @Provides
+    @Singleton
+    fun provideWiFiSyncScheduler(
+        @ApplicationContext context: Context,
+        tokenStorage: AuthTokenStorage
+    ): WiFiSyncScheduler = WiFiSyncScheduler(context, tokenStorage)
 }

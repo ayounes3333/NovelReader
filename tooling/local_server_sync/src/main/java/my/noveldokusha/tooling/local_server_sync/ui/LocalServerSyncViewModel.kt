@@ -10,6 +10,8 @@ import kotlinx.coroutines.launch
 import my.noveldokusha.tooling.local_server_sync.auth.AuthState
 import my.noveldokusha.tooling.local_server_sync.auth.LocalServerAuthService
 import my.noveldokusha.tooling.local_server_sync.manager.LocalServerSyncManager
+import my.noveldokusha.tooling.local_server_sync.storage.AuthTokenStorage
+import my.noveldokusha.tooling.local_server_sync.sync.WiFiSyncScheduler
 import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
@@ -25,7 +27,9 @@ sealed class SyncState {
 @HiltViewModel
 class LocalServerSyncViewModel @Inject constructor(
     private val authService: LocalServerAuthService,
-    private val syncManager: LocalServerSyncManager
+    private val syncManager: LocalServerSyncManager,
+    private val tokenStorage: AuthTokenStorage,
+    private val wifiSyncScheduler: WiFiSyncScheduler
 ) : ViewModel() {
 
     val authState: StateFlow<AuthState> = authService.authState
@@ -33,7 +37,46 @@ class LocalServerSyncViewModel @Inject constructor(
     private val _syncState = MutableStateFlow<SyncState>(SyncState.Idle)
     val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
 
+    private val _autoSyncEnabled = MutableStateFlow(tokenStorage.isAutoSyncEnabled())
+    val autoSyncEnabled: StateFlow<Boolean> = _autoSyncEnabled.asStateFlow()
+
+    private val _serverUrls = MutableStateFlow(tokenStorage.getServerUrls())
+    val serverUrls: StateFlow<List<String>> = _serverUrls.asStateFlow()
+
     private val dateFormatter = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
+
+    init {
+        if (_autoSyncEnabled.value) {
+            wifiSyncScheduler.register()
+        }
+    }
+
+    fun setAutoSyncEnabled(enabled: Boolean) {
+        tokenStorage.setAutoSyncEnabled(enabled)
+        _autoSyncEnabled.value = enabled
+        if (enabled) {
+            wifiSyncScheduler.register()
+        } else {
+            wifiSyncScheduler.unregister()
+        }
+    }
+
+    fun addServerUrl(url: String) {
+        val current = _serverUrls.value.toMutableList()
+        val trimmed = url.trimEnd('/')
+        if (trimmed.isNotBlank() && trimmed !in current) {
+            current.add(trimmed)
+            tokenStorage.saveServerUrls(current)
+            _serverUrls.value = current
+        }
+    }
+
+    fun removeServerUrl(url: String) {
+        val current = _serverUrls.value.toMutableList()
+        current.remove(url)
+        tokenStorage.saveServerUrls(current)
+        _serverUrls.value = current
+    }
 
     fun syncLibrary() {
         viewModelScope.launch {

@@ -1,17 +1,47 @@
 package my.noveldokusha.tooling.local_server_sync.ui
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import my.noveldokusha.tooling.local_server_sync.auth.AuthState
-import my.noveldokusha.tooling.local_server_sync.ui.LocalServerAuthDialog
-import my.noveldokusha.tooling.local_server_sync.ui.SyncState
 
 @Composable
 fun LocalServerSyncPreferencesSection(
@@ -19,8 +49,11 @@ fun LocalServerSyncPreferencesSection(
     viewModel: LocalServerSyncViewModel = hiltViewModel()
 ) {
     var showAuthDialog by remember { mutableStateOf(false) }
+    var showAddUrlDialog by remember { mutableStateOf(false) }
     val authState by viewModel.authState.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
+    val autoSyncEnabled by viewModel.autoSyncEnabled.collectAsState()
+    val serverUrls by viewModel.serverUrls.collectAsState()
 
     Card(
         modifier = modifier.fillMaxWidth()
@@ -126,6 +159,83 @@ fun LocalServerSyncPreferencesSection(
                 }
             }
 
+            // Auto-sync toggle (only when authenticated)
+            if (authState is AuthState.Authenticated) {
+                HorizontalDivider()
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Auto-sync on WiFi",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "Automatically sync when connected to a network with the server",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = autoSyncEnabled,
+                        onCheckedChange = { viewModel.setAutoSyncEnabled(it) }
+                    )
+                }
+
+                // Server URLs section
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Server addresses",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    IconButton(onClick = { showAddUrlDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = "Add server URL"
+                        )
+                    }
+                }
+
+                if (serverUrls.isEmpty()) {
+                    Text(
+                        text = "No server addresses configured",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    serverUrls.forEach { url ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = url,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = { viewModel.removeServerUrl(url) },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = "Remove",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             // Action buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -144,7 +254,21 @@ fun LocalServerSyncPreferencesSection(
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Sync Now")
+                            Text("Sync")
+                        }
+
+                        OutlinedButton(
+                            onClick = { viewModel.syncComplete() },
+                            enabled = syncState !is SyncState.Syncing,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.CloudDownload,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Full Sync")
                         }
 
                         OutlinedButton(
@@ -152,12 +276,10 @@ fun LocalServerSyncPreferencesSection(
                             enabled = syncState !is SyncState.Syncing
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.Logout,
+                                imageVector = Icons.AutoMirrored.Filled.Logout,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp)
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Sign Out")
                         }
                     }
                     else -> {
@@ -166,7 +288,7 @@ fun LocalServerSyncPreferencesSection(
                             modifier = Modifier.weight(1f)
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.Login,
+                                imageVector = Icons.AutoMirrored.Filled.Login,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -183,6 +305,41 @@ fun LocalServerSyncPreferencesSection(
     if (showAuthDialog) {
         LocalServerAuthDialog(
             onDismiss = { showAuthDialog = false }
+        )
+    }
+
+    // Add server URL dialog
+    if (showAddUrlDialog) {
+        var urlInput by remember { mutableStateOf("http://") }
+        AlertDialog(
+            onDismissRequest = { showAddUrlDialog = false },
+            title = { Text("Add Server Address") },
+            text = {
+                OutlinedTextField(
+                    value = urlInput,
+                    onValueChange = { urlInput = it },
+                    label = { Text("Server URL") },
+                    placeholder = { Text("http://192.168.1.100:8080") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.addServerUrl(urlInput)
+                        showAddUrlDialog = false
+                    },
+                    enabled = urlInput.startsWith("http")
+                ) {
+                    Text("Add")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddUrlDialog = false }) {
+                    Text("Cancel")
+                }
+            }
         )
     }
 }

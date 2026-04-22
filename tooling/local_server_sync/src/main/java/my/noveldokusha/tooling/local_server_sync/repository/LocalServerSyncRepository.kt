@@ -11,8 +11,7 @@ import javax.inject.Singleton
 @Singleton
 class LocalServerSyncRepository @Inject constructor(
     private val apiService: LocalServerApiService,
-    private val authService: LocalServerAuthService,
-    private val json: Json
+    private val authService: LocalServerAuthService
 ) {
 
     suspend fun uploadLibrary(userLibrary: UserLibrary): Result<Unit> {
@@ -106,15 +105,13 @@ class LocalServerSyncRepository @Inject constructor(
             val authToken = authService.getAuthToken()
                 ?: return Result.failure(Exception("User not authenticated"))
 
-            // For now, we'll use the library endpoint and construct a complete response
-            // In the future, we could add a dedicated complete sync download endpoint
-            val libraryResponse = apiService.getLibrary(authToken)
+            val response = apiService.getCompleteSync(authToken)
 
-            if (libraryResponse.success) {
+            if (response.success) {
                 Timber.d("Complete sync downloaded successfully")
-                Result.success(libraryResponse)
+                Result.success(response)
             } else {
-                val message = libraryResponse.message.ifEmpty { "Failed to download complete sync" }
+                val message = response.message.ifEmpty { "Failed to download complete sync" }
                 Timber.e("Failed to download complete sync: $message")
                 Result.failure(Exception(message))
             }
@@ -272,5 +269,9 @@ class LocalServerSyncRepository @Inject constructor(
             Timber.e(e, "Error downloading images")
             Result.failure(e)
         }
+    }
+
+    suspend fun pingServer(serverUrl: String? = null): Boolean {
+        return apiService.pingServer(serverUrl)
     }
 }
