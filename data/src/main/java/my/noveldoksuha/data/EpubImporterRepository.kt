@@ -48,12 +48,17 @@ class EpubImporterRepository @Inject constructor(
     ): String = withContext(Dispatchers.IO) {
         val localBookUrl = appFileResolver.getLocalBookPath(storageFolderName)
 
-        // First clean any previous entries from the book
+        // Preserve existing book progress before cleaning
+        val existingBook = libraryBooks.get(localBookUrl)
+
+        // Only remove chapter bodies for chapters that no longer exist in the new epub
+        val newChapterUrls = epub.chapters
+            .map { appFileResolver.getLocalBookChapterPath(storageFolderName, it.absPath) }
+            .toSet()
         bookChapters.chapters(localBookUrl)
             .map { it.url }
+            .filter { it !in newChapterUrls }
             .let { chapterBody.removeRows(it) }
-        bookChapters.removeAllFromBook(localBookUrl)
-        libraryBooks.remove(localBookUrl)
 
         val coverImage = epub.coverImage
         if (coverImage != null) {
@@ -63,14 +68,17 @@ class EpubImporterRepository @Inject constructor(
             )
         }
 
-        // Insert new book data
+        // Insert or update book, restoring preserved progress fields
         Book(
             title = storageFolderName,
             url = localBookUrl,
             coverImageUrl = appFileResolver.getLocalBookCoverPath(),
-            inLibrary = addToLibrary
-        ).let { libraryBooks.insert(it) }
+            inLibrary = existingBook?.inLibrary ?: addToLibrary,
+            lastReadChapter = existingBook?.lastReadChapter,
+            lastReadEpochTimeMilli = existingBook?.lastReadEpochTimeMilli ?: 0,
+        ).let { libraryBooks.insertReplace(listOf(it)) }
 
+        // Merge new chapters, preserving read progress for existing ones
         epub.chapters.mapIndexed { i, chapter ->
             Chapter(
                 title = chapter.title,
@@ -78,7 +86,7 @@ class EpubImporterRepository @Inject constructor(
                 bookUrl = localBookUrl,
                 position = i
             )
-        }.let { bookChapters.insert(it) }
+        }.let { bookChapters.merge(it, localBookUrl) }
 
         epub.chapters.map { chapter ->
             ChapterBody(
