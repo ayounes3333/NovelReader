@@ -98,6 +98,8 @@
     <string name="select_all_chapters">Select all chapters</string>
     <string name="close_selection_bar">Close selection bar</string>
     <string name="open_last_read_chapter">Open last read chapter</string>
+    <string name="scroll_to_current_chapter">Scroll to current chapter</string>
+    <string name="scroll_to_last_read_chapter">Scroll to last read chapter</string>
     <string name="updating_book_info">Updating book info</string>
     <string name="backup_options">Backup options</string>
     <string name="save_images">Save images</string>

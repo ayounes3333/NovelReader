@@ -19,11 +19,13 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmarks
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.DoneOutline
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RemoveDone
 import androidx.compose.material.icons.filled.Search
@@ -43,6 +45,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -52,6 +55,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -64,6 +68,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.aliyounes.aurui.components.AurTextField
+import kotlinx.coroutines.launch
 import my.nanihadesuka.compose.InternalLazyColumnScrollbar
 import my.noveldoksuha.coreui.theme.ColorAccent
 import my.noveldoksuha.coreui.theme.ColorLike
@@ -382,25 +387,68 @@ internal fun ChaptersScreen(
             }
         },
         floatingActionButton = {
-            FloatingActionButton(
-                containerColor = ColorAccent,
-                onClick = onResumeReading
+            val coroutineScope = rememberCoroutineScope()
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.textPadding()
+                // Scroll to current chapter (where user is currently at)
+                SmallFloatingActionButton(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    onClick = {
+                        val index = state.filteredChapters.value.indexOfFirst { it.lastReadChapter }
+                        if (index >= 0) {
+                            coroutineScope.launch {
+                                lazyListState.animateScrollToItem(index + 1)
+                            }
+                        }
+                    }
                 ) {
                     Icon(
-                        Icons.Filled.PlayArrow,
-                        contentDescription = stringResource(id = R.string.open_last_read_chapter),
-                        tint = Color.White
+                        Icons.Filled.MyLocation,
+                        contentDescription = stringResource(id = R.string.scroll_to_current_chapter)
                     )
-                    AnimatedVisibility(visible = lazyListState.isAtTop(threshold = 100.dp).value) {
-                        Text(
-                            text = stringResource(id = R.string.read),
-                            modifier = Modifier.padding(end = 8.dp)
+                }
+                // Scroll to the last chapter marked as read
+                SmallFloatingActionButton(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    onClick = {
+                        val index = state.filteredChapters.value.indexOfLast { it.chapter.read }
+                        if (index >= 0) {
+                            coroutineScope.launch {
+                                lazyListState.animateScrollToItem(index + 1)
+                            }
+                        }
+                    }
+                ) {
+                    Icon(
+                        Icons.Filled.Bookmarks,
+                        contentDescription = stringResource(id = R.string.scroll_to_last_read_chapter)
+                    )
+                }
+                // Resume reading
+                FloatingActionButton(
+                    containerColor = ColorAccent,
+                    onClick = onResumeReading
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.textPadding()
+                    ) {
+                        Icon(
+                            Icons.Filled.PlayArrow,
+                            contentDescription = stringResource(id = R.string.open_last_read_chapter),
+                            tint = Color.White
                         )
+                        AnimatedVisibility(visible = lazyListState.isAtTop(threshold = 100.dp).value) {
+                            Text(
+                                text = stringResource(id = R.string.read),
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                        }
                     }
                 }
             }

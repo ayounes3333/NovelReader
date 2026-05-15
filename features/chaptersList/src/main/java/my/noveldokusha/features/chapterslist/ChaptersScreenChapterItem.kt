@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import my.noveldoksuha.coreui.components.AnimatedTransition
 import my.noveldoksuha.coreui.theme.ColorNotice
+import my.noveldoksuha.coreui.theme.Success400
 import my.noveldoksuha.coreui.theme.InternalTheme
 import my.noveldoksuha.coreui.theme.PreviewThemes
 import my.noveldoksuha.coreui.theme.colorApp
@@ -60,7 +61,10 @@ internal fun ChaptersScreenChapterItem(
                         stringResource(id = R.string.last_read),
                         color = ColorNotice
                     )
-                    read -> Text(stringResource(id = R.string.read))
+                    read -> Text(
+                        stringResource(id = R.string.read),
+                        color = Success400
+                    )
                     else -> Text("")
                 }
             }
