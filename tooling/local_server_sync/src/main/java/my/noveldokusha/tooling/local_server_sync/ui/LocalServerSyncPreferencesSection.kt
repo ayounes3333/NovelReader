@@ -1,5 +1,9 @@
 package my.noveldokusha.tooling.local_server_sync.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,7 +43,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import my.noveldokusha.tooling.local_server_sync.auth.AuthState
 
@@ -50,10 +56,12 @@ fun LocalServerSyncPreferencesSection(
 ) {
     var showAuthDialog by remember { mutableStateOf(false) }
     var showAddUrlDialog by remember { mutableStateOf(false) }
+    var showAddBssidDialog by remember { mutableStateOf(false) }
     val authState by viewModel.authState.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
     val autoSyncEnabled by viewModel.autoSyncEnabled.collectAsState()
     val serverUrls by viewModel.serverUrls.collectAsState()
+    val homeBssids by viewModel.homeBssids.collectAsState()
 
     Card(
         modifier = modifier.fillMaxWidth()
@@ -234,6 +242,59 @@ fun LocalServerSyncPreferencesSection(
                         }
                     }
                 }
+
+                // Home WiFi BSSIDs (gate for bulk sync)
+                HorizontalDivider()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Home WiFi networks",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = if (homeBssids.isEmpty())
+                                "Any WiFi will trigger bulk sync. Add the current network to restrict."
+                            else
+                                "Bulk sync runs only when connected to a listed BSSID.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(onClick = { showAddBssidDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = "Add home WiFi"
+                        )
+                    }
+                }
+
+                homeBssids.forEach { bssid ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = bssid,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(
+                            onClick = { viewModel.removeHomeBssid(bssid) },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = "Remove",
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
             }
 
             // Action buttons
@@ -337,6 +398,84 @@ fun LocalServerSyncPreferencesSection(
             },
             dismissButton = {
                 TextButton(onClick = { showAddUrlDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Add home WiFi BSSID dialog
+    if (showAddBssidDialog) {
+        val ctx = LocalContext.current
+        var hasLocationPermission by remember {
+            mutableStateOf(
+                ContextCompat.checkSelfPermission(
+                    ctx, Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            )
+        }
+        var detected by remember(hasLocationPermission) {
+            mutableStateOf(if (hasLocationPermission) viewModel.getCurrentBssid() else null)
+        }
+        var bssidInput by remember { mutableStateOf(detected.orEmpty()) }
+
+        val permissionLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            hasLocationPermission = granted
+            if (granted) {
+                val current = viewModel.getCurrentBssid()
+                detected = current
+                if (!current.isNullOrBlank()) bssidInput = current
+            }
+        }
+
+        AlertDialog(
+            onDismissRequest = { showAddBssidDialog = false },
+            title = { Text("Add Home WiFi") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val helper = when {
+                        !hasLocationPermission ->
+                            "Location permission is required to read the current WiFi BSSID. Grant it, or paste the BSSID manually (aa:bb:cc:dd:ee:ff)."
+                        detected != null ->
+                            "Detected current WiFi BSSID. Tap Add to mark this network as home."
+                        else ->
+                            "Could not read BSSID. Make sure WiFi is on, or paste it manually (aa:bb:cc:dd:ee:ff)."
+                    }
+                    Text(text = helper, style = MaterialTheme.typography.bodySmall)
+
+                    if (!hasLocationPermission) {
+                        TextButton(
+                            onClick = {
+                                permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                            }
+                        ) { Text("Grant location permission") }
+                    }
+
+                    OutlinedTextField(
+                        value = bssidInput,
+                        onValueChange = { bssidInput = it.lowercase() },
+                        label = { Text("BSSID") },
+                        placeholder = { Text("aa:bb:cc:dd:ee:ff") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.addHomeBssid(bssidInput)
+                        showAddBssidDialog = false
+                    },
+                    enabled = bssidInput.isNotBlank()
+                ) {
+                    Text("Add")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddBssidDialog = false }) {
                     Text("Cancel")
                 }
             }

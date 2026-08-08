@@ -1,277 +1,101 @@
 package my.noveldokusha.tooling.local_server_sync.repository
 
-import kotlinx.serialization.json.Json
 import my.noveldokusha.tooling.local_server_sync.api.LocalServerApiService
-import my.noveldokusha.tooling.local_server_sync.auth.LocalServerAuthService
-import my.noveldokusha.tooling.local_server_sync.data.*
+import my.noveldokusha.tooling.local_server_sync.data.BookChapterEntry
+import my.noveldokusha.tooling.local_server_sync.data.ChapterBodyManifestResponse
+import my.noveldokusha.tooling.local_server_sync.data.ChapterChangesRequest
+import my.noveldokusha.tooling.local_server_sync.data.ChapterPullResponse
+import my.noveldokusha.tooling.local_server_sync.data.ImageManifestEntry
+import my.noveldokusha.tooling.local_server_sync.data.ImageManifestResponse
+import my.noveldokusha.tooling.local_server_sync.data.ImageReferencesRequest
+import my.noveldokusha.tooling.local_server_sync.data.ImageReferencesResponse
+import my.noveldokusha.tooling.local_server_sync.data.LibraryBookEntry
+import my.noveldokusha.tooling.local_server_sync.data.LibraryChangesRequest
+import my.noveldokusha.tooling.local_server_sync.data.LibraryPullResponse
+import my.noveldokusha.tooling.local_server_sync.data.SyncStateResponse
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Thin transport layer wrapping [LocalServerApiService] with `Result<T>`
+ * semantics so callers (workers, manager) don't have to deal with thrown
+ * exceptions or null returns directly.
+ */
 @Singleton
 class LocalServerSyncRepository @Inject constructor(
-    private val apiService: LocalServerApiService,
-    private val authService: LocalServerAuthService
+    private val apiService: LocalServerApiService
 ) {
 
-    suspend fun uploadLibrary(userLibrary: UserLibrary): Result<Unit> {
-        return try {
-            val authToken = authService.getAuthToken()
-                ?: return Result.failure(Exception("User not authenticated"))
+    suspend fun getSyncState(): Result<SyncStateResponse> = runCatching { apiService.getSyncState() }
 
-            val userId = authService.getCurrentUserId()
-                ?: return Result.failure(Exception("User ID not available"))
+    // ── Library ─────────────────────────────────────────────────────────
 
-            val libraryWithUserId = userLibrary.copy(
-                userId = userId,
-                lastSyncTimestamp = System.currentTimeMillis()
-            )
-
-            val response = apiService.syncLibrary(libraryWithUserId, authToken)
-
-            if (response.success) {
-                Timber.d("Library uploaded successfully")
-                Result.success(Unit)
-            } else {
-                Timber.e("Failed to upload library: ${response.message}")
-                Result.failure(Exception(response.message))
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Error uploading library")
-            Result.failure(e)
+    suspend fun pushLibrary(entries: List<LibraryBookEntry>): Result<List<LibraryBookEntry>> =
+        runCatching {
+            val response = apiService.pushLibraryChanges(LibraryChangesRequest(entries))
+            if (!response.success) error(response.message.ifBlank { "library push failed" })
+            response.applied
         }
+
+    suspend fun pullLibrary(since: Long, limit: Int = 500): Result<LibraryPullResponse> =
+        runCatching { apiService.pullLibraryChanges(since, limit) }
+
+    // ── Chapters ────────────────────────────────────────────────────────
+
+    suspend fun pushChapters(entries: List<BookChapterEntry>): Result<List<BookChapterEntry>> =
+        runCatching {
+            val response = apiService.pushChapterChanges(ChapterChangesRequest(entries))
+            if (!response.success) error(response.message.ifBlank { "chapters push failed" })
+            response.applied
+        }
+
+    suspend fun pullChapters(since: Long, limit: Int = 1000): Result<ChapterPullResponse> =
+        runCatching { apiService.pullChapterChanges(since, limit) }
+
+    // ── Chapter bodies ──────────────────────────────────────────────────
+
+    suspend fun pullChapterBodyManifest(since: Long, limit: Int = 500): Result<ChapterBodyManifestResponse> =
+        runCatching { apiService.pullChapterBodyManifest(since, limit) }
+
+    suspend fun putChapterBody(chapterUrl: String, body: String): Result<Unit> = runCatching {
+        if (!apiService.putChapterBody(chapterUrl, body)) error("chapter body upload failed")
     }
 
-    suspend fun downloadLibrary(): Result<UserLibrary> {
-        return try {
-            val authToken = authService.getAuthToken()
-                ?: return Result.failure(Exception("User not authenticated"))
+    suspend fun getChapterBody(chapterUrl: String): Result<Pair<String, String>?> =
+        runCatching { apiService.getChapterBody(chapterUrl) }
 
-            val response = apiService.getLibrary(authToken)
-
-            if (response.success && response.library != null) {
-                Timber.d("Library downloaded successfully")
-                Result.success(response.library)
-            } else {
-                val message = response.message.ifEmpty { "Failed to download library" }
-                Timber.e("Failed to download library: $message")
-                Result.failure(Exception(message))
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Error downloading library")
-            Result.failure(e)
-        }
+    suspend fun deleteChapterBody(chapterUrl: String): Result<Unit> = runCatching {
+        if (!apiService.deleteChapterBody(chapterUrl)) error("chapter body delete failed")
     }
 
-    suspend fun uploadCompleteSync(
-        userLibrary: UserLibrary?,
-        chapters: Map<String, List<BookChapter>>?,
-        chapterBodies: Map<String, ChapterBody>?
-    ): Result<SyncResponse> {
-        return try {
-            val authToken = authService.getAuthToken()
-                ?: return Result.failure(Exception("User not authenticated"))
+    // ── Images ──────────────────────────────────────────────────────────
 
-            val userId = authService.getCurrentUserId()
-                ?: return Result.failure(Exception("User ID not available"))
+    suspend fun pullImageManifest(since: Long, limit: Int = 500): Result<ImageManifestResponse> =
+        runCatching { apiService.pullImageManifest(since, limit) }
 
-            val syncRequest = SyncRequest(
-                library = userLibrary?.copy(
-                    userId = userId,
-                    lastSyncTimestamp = System.currentTimeMillis()
-                ),
-                chapters = chapters,
-                chapterBodies = chapterBodies,
-                lastSyncTimestamp = System.currentTimeMillis()
-            )
+    suspend fun pushImageReferences(entries: List<ImageManifestEntry>): Result<ImageReferencesResponse> =
+        runCatching { apiService.postImageReferences(ImageReferencesRequest(entries)) }
 
-            val response = apiService.completeSync(syncRequest, authToken)
-
-            if (response.success) {
-                Timber.d("Complete sync uploaded successfully")
-                Result.success(response)
-            } else {
-                Timber.e("Failed to upload complete sync: ${response.message}")
-                Result.failure(Exception(response.message))
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Error uploading complete sync")
-            Result.failure(e)
-        }
+    suspend fun imageBlobExists(sha256: String): Boolean = try {
+        apiService.headImageBlob(sha256)
+    } catch (_: Exception) {
+        false
     }
 
-    suspend fun downloadCompleteSync(): Result<SyncResponse> {
-        return try {
-            val authToken = authService.getAuthToken()
-                ?: return Result.failure(Exception("User not authenticated"))
-
-            val response = apiService.getCompleteSync(authToken)
-
-            if (response.success) {
-                Timber.d("Complete sync downloaded successfully")
-                Result.success(response)
-            } else {
-                val message = response.message.ifEmpty { "Failed to download complete sync" }
-                Timber.e("Failed to download complete sync: $message")
-                Result.failure(Exception(message))
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Error downloading complete sync")
-            Result.failure(e)
-        }
+    suspend fun putImageBlob(sha256: String, mimeType: String, bytes: ByteArray): Result<Unit> = runCatching {
+        if (!apiService.putImageBlob(sha256, mimeType, bytes)) error("image upload failed")
     }
 
-    suspend fun uploadChapters(bookUrl: String, chapters: List<BookChapter>): Result<Unit> {
-        return try {
-            val authToken = authService.getAuthToken()
-                ?: return Result.failure(Exception("User not authenticated"))
+    suspend fun getImageBlob(sha256: String): Result<ByteArray?> =
+        runCatching { apiService.getImageBlob(sha256) }
 
-            val chaptersMap = mapOf(bookUrl to chapters)
-            val syncRequest = SyncRequest(
-                chapters = chaptersMap,
-                lastSyncTimestamp = System.currentTimeMillis()
-            )
+    // ── Discovery ───────────────────────────────────────────────────────
 
-            val response = apiService.completeSync(syncRequest, authToken)
-
-            if (response.success) {
-                Timber.d("Chapters uploaded successfully for book: $bookUrl")
-                Result.success(Unit)
-            } else {
-                Timber.e("Failed to upload chapters: ${response.message}")
-                Result.failure(Exception(response.message))
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Error uploading chapters")
-            Result.failure(e)
-        }
-    }
-
-    suspend fun uploadChapterBodies(chapterBodies: Map<String, ChapterBody>): Result<Unit> {
-        return try {
-            val authToken = authService.getAuthToken()
-                ?: return Result.failure(Exception("User not authenticated"))
-
-            val syncRequest = SyncRequest(
-                chapterBodies = chapterBodies,
-                lastSyncTimestamp = System.currentTimeMillis()
-            )
-
-            val response = apiService.completeSync(syncRequest, authToken)
-
-            if (response.success) {
-                Timber.d("Chapter bodies uploaded successfully")
-                Result.success(Unit)
-            } else {
-                Timber.e("Failed to upload chapter bodies: ${response.message}")
-                Result.failure(Exception(response.message))
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Error uploading chapter bodies")
-            Result.failure(e)
-        }
-    }
-
-    suspend fun downloadChapters(bookUrl: String): Result<List<BookChapter>> {
-        return try {
-            val authToken = authService.getAuthToken()
-                ?: return Result.failure(Exception("User not authenticated"))
-
-            val response = apiService.getLibrary(authToken)
-
-            if (response.success && response.chapters != null) {
-                val chapters = response.chapters[bookUrl] ?: emptyList()
-                Timber.d("Chapters downloaded successfully for book: $bookUrl")
-                Result.success(chapters)
-            } else {
-                val message = response.message.ifEmpty { "Failed to download chapters" }
-                Timber.e("Failed to download chapters: $message")
-                Result.failure(Exception(message))
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Error downloading chapters")
-            Result.failure(e)
-        }
-    }
-
-    suspend fun downloadChapterBody(chapterUrl: String): Result<ChapterBody?> {
-        return try {
-            val authToken = authService.getAuthToken()
-                ?: return Result.failure(Exception("User not authenticated"))
-
-            val response = apiService.getLibrary(authToken)
-
-            if (response.success && response.chapterBodies != null) {
-                val chapterBody = response.chapterBodies[chapterUrl]
-                Timber.d("Chapter body downloaded successfully for: $chapterUrl")
-                Result.success(chapterBody)
-            } else {
-                val message = response.message.ifEmpty { "Failed to download chapter body" }
-                Timber.e("Failed to download chapter body: $message")
-                Result.failure(Exception(message))
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Error downloading chapter body")
-            Result.failure(e)
-        }
-    }
-
-    suspend fun getUserInfo(): Result<UserInfo> {
-        return try {
-            val authToken = authService.getAuthToken()
-                ?: return Result.failure(Exception("User not authenticated"))
-
-            val userInfo = apiService.getUserInfo(authToken)
-            Timber.d("User info retrieved successfully")
-            Result.success(userInfo)
-        } catch (e: Exception) {
-            Timber.e(e, "Error getting user info")
-            Result.failure(e)
-        }
-    }
-
-    suspend fun uploadImages(images: List<ImageBackupItem>): Result<ImageSyncResponse> {
-        return try {
-            val authToken = authService.getAuthToken()
-                ?: return Result.failure(Exception("User not authenticated"))
-
-            val response = apiService.uploadImages(images, authToken)
-
-            if (response.success) {
-                Timber.d("Images uploaded successfully: ${response.uploadedCount}/${images.size}")
-                Result.success(response)
-            } else {
-                Timber.e("Failed to upload images: ${response.message}")
-                Result.failure(Exception(response.message))
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Error uploading images")
-            Result.failure(e)
-        }
-    }
-
-    suspend fun downloadImages(): Result<List<ImageBackupItem>> {
-        return try {
-            val authToken = authService.getAuthToken()
-                ?: return Result.failure(Exception("User not authenticated"))
-
-            val response = apiService.downloadImages(authToken)
-
-            if (response.success && response.images != null) {
-                Timber.d("Images downloaded successfully: ${response.images.size}")
-                Result.success(response.images)
-            } else {
-                val message = response.message.ifEmpty { "Failed to download images" }
-                Timber.e("Failed to download images: $message")
-                Result.failure(Exception(message))
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Error downloading images")
-            Result.failure(e)
-        }
-    }
-
-    suspend fun pingServer(serverUrl: String? = null): Boolean {
-        return apiService.pingServer(serverUrl)
+    suspend fun pingServer(serverUrl: String? = null): Boolean = try {
+        apiService.pingServer(serverUrl)
+    } catch (e: Exception) {
+        Timber.w(e, "ping failed")
+        false
     }
 }

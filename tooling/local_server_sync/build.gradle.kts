@@ -29,6 +29,7 @@ dependencies {
 
     // Compose
     implementation(libs.compose.androidx.ui)
+    implementation(libs.compose.androidx.activity)
     implementation(libs.compose.androidx.runtime.livedata)
     implementation(libs.compose.androidx.lifecycle.viewmodel)
     implementation(libs.compose.androidx.material.icons.extended)

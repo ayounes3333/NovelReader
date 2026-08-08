@@ -1,6 +1,5 @@
 package my.noveldokusha.tooling.local_server_sync.auth
 
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -8,6 +7,7 @@ import my.noveldokusha.tooling.local_server_sync.api.LocalServerApiService
 import my.noveldokusha.tooling.local_server_sync.data.AuthResponse
 import my.noveldokusha.tooling.local_server_sync.data.LoginRequest
 import my.noveldokusha.tooling.local_server_sync.data.RegisterRequest
+import my.noveldokusha.tooling.local_server_sync.data.UserInfo
 import my.noveldokusha.tooling.local_server_sync.storage.AuthTokenStorage
 import timber.log.Timber
 import javax.inject.Inject
@@ -28,50 +28,25 @@ class LocalServerAuthService @Inject constructor(
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
     init {
-        // Check if we have a stored token and validate it
         checkStoredAuthentication()
     }
 
     private fun checkStoredAuthentication() {
-        val token = tokenStorage.getToken()
-        if (token != null) {
-            // TODO: Validate token with server
-            // For now, we'll assume it's valid if it exists
-            val userInfo = tokenStorage.getUserInfo()
-            if (userInfo != null) {
-                _authState.value = AuthState.Authenticated(
-                    userId = userInfo.id,
-                    username = userInfo.username,
-                    email = userInfo.email
-                )
-            }
-        }
+        val token = tokenStorage.getAccessToken() ?: return
+        if (token.isBlank()) return
+        val userInfo = tokenStorage.getUserInfo() ?: return
+        _authState.value = AuthState.Authenticated(
+            userId = userInfo.id,
+            username = userInfo.username,
+            email = userInfo.email
+        )
     }
 
     suspend fun signInWithUsernameAndPassword(username: String, password: String): Result<String> {
+        _authState.value = AuthState.Loading
         return try {
-            _authState.value = AuthState.Loading
-
-            val loginRequest = LoginRequest(username = username, password = password)
-            val response = apiService.login(loginRequest)
-
-            if (response.success && response.token != null && response.user != null) {
-                // Store the token and user info
-                tokenStorage.saveToken(response.token)
-                tokenStorage.saveUserInfo(response.user)
-
-                _authState.value = AuthState.Authenticated(
-                    userId = response.user.id,
-                    username = response.user.username,
-                    email = response.user.email
-                )
-
-                Timber.d("User signed in successfully: ${response.user.id}")
-                Result.success(response.user.id)
-            } else {
-                _authState.value = AuthState.NotAuthenticated
-                Result.failure(Exception(response.message))
-            }
+            val response = apiService.login(LoginRequest(username = username, password = password))
+            persistOrFail(response)
         } catch (e: Exception) {
             _authState.value = AuthState.NotAuthenticated
             Timber.e(e, "Sign in failed")
@@ -84,33 +59,12 @@ class LocalServerAuthService @Inject constructor(
         email: String,
         password: String
     ): Result<String> {
+        _authState.value = AuthState.Loading
         return try {
-            _authState.value = AuthState.Loading
-
-            val registerRequest = RegisterRequest(
-                username = username,
-                email = email,
-                password = password
+            val response = apiService.register(
+                RegisterRequest(username = username, email = email, password = password)
             )
-            val response = apiService.register(registerRequest)
-
-            if (response.success && response.token != null && response.user != null) {
-                // Store the token and user info
-                tokenStorage.saveToken(response.token)
-                tokenStorage.saveUserInfo(response.user)
-
-                _authState.value = AuthState.Authenticated(
-                    userId = response.user.id,
-                    username = response.user.username,
-                    email = response.user.email
-                )
-
-                Timber.d("User registered successfully: ${response.user.id}")
-                Result.success(response.user.id)
-            } else {
-                _authState.value = AuthState.NotAuthenticated
-                Result.failure(Exception(response.message))
-            }
+            persistOrFail(response)
         } catch (e: Exception) {
             _authState.value = AuthState.NotAuthenticated
             Timber.e(e, "Registration failed")
@@ -118,32 +72,57 @@ class LocalServerAuthService @Inject constructor(
         }
     }
 
+    private fun persistOrFail(response: AuthResponse): Result<String> {
+        val access = response.accessToken ?: response.token
+        val user = response.user
+        if (!response.success || access.isNullOrBlank()) {
+            _authState.value = AuthState.NotAuthenticated
+            return Result.failure(Exception(response.message.ifBlank { "Authentication failed" }))
+        }
+        // user info may be missing on legacy servers; synthesize what we can.
+        val resolved = user ?: UserInfo(id = "", username = "", email = "")
+        tokenStorage.saveTokens(
+            accessToken = access,
+            accessExpiresAt = response.accessExpiresAt,
+            refreshToken = response.refreshToken,
+            refreshExpiresAt = response.refreshExpiresAt
+        )
+        tokenStorage.saveUserInfo(resolved)
+        _authState.value = AuthState.Authenticated(
+            userId = resolved.id,
+            username = resolved.username,
+            email = resolved.email
+        )
+        Timber.d("User authenticated: ${resolved.id}")
+        return Result.success(resolved.id)
+    }
+
     fun signOut() {
-        tokenStorage.clearToken()
+        val refresh = tokenStorage.getRefreshToken()
+        tokenStorage.clearTokens()
         tokenStorage.clearUserInfo()
+        tokenStorage.resetCursors()
         _authState.value = AuthState.NotAuthenticated
         Timber.d("User signed out")
-    }
-
-    fun getCurrentUserId(): String? {
-        return when (val state = _authState.value) {
-            is AuthState.Authenticated -> state.userId
-            else -> null
+        // Best-effort server revoke — ignore failures.
+        if (!refresh.isNullOrBlank()) {
+            try {
+                kotlinx.coroutines.runBlocking { apiService.logout(refresh) }
+            } catch (_: Exception) { /* fire and forget */ }
         }
     }
 
-    fun getCurrentUsername(): String? {
-        return when (val state = _authState.value) {
-            is AuthState.Authenticated -> state.username
-            else -> null
-        }
+    fun getCurrentUserId(): String? = when (val s = _authState.value) {
+        is AuthState.Authenticated -> s.userId
+        else -> null
     }
 
-    fun isAuthenticated(): Boolean {
-        return _authState.value is AuthState.Authenticated
+    fun getCurrentUsername(): String? = when (val s = _authState.value) {
+        is AuthState.Authenticated -> s.username
+        else -> null
     }
 
-    fun getAuthToken(): String? {
-        return tokenStorage.getToken()
-    }
+    fun isAuthenticated(): Boolean = _authState.value is AuthState.Authenticated
+
+    fun getAuthToken(): String? = tokenStorage.getAccessToken()
 }

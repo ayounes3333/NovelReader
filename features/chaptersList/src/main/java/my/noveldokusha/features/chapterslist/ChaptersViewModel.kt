@@ -10,6 +10,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import my.noveldoksuha.interactor.WorkersInteractions
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -81,6 +83,9 @@ internal class ChaptersViewModel @Inject constructor(
         isRefreshable = mutableStateOf(rawBookUrl.isContentUri || !bookUrl.isLocalUri),
         searchQuery = mutableStateOf("")
     )
+
+    private val _bookDeletedEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val bookDeletedEvent = _bookDeletedEvent.asSharedFlow()
 
     init {
         appScope.launch {
@@ -324,5 +329,16 @@ internal class ChaptersViewModel @Inject constructor(
             bookTitle = bookTitle,
         )
         toasty.show(R.string.epub_export_started)
+    }
+
+    fun deleteBookFromDb() {
+        appScope.launch(Dispatchers.IO) {
+            val chapters = appRepository.bookChapters.chapters(bookUrl)
+            appRepository.chapterBody.removeRows(chapters.map { it.url })
+            appRepository.bookChapters.removeAllFromBook(bookUrl)
+            appRepository.libraryBooks.remove(bookUrl)
+            toasty.show(R.string.book_deleted)
+            _bookDeletedEvent.emit(Unit)
+        }
     }
 }

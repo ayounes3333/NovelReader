@@ -123,15 +123,31 @@ suspend fun epubParser(
     val ncxFilePath = manifestItems["ncx"]?.absPath
     val ncxFile = files[ncxFilePath] ?: throw Exception("ncx file missing")
 
+    // Resolve NCX href values relative to the NCX file's directory, the same way
+    // hrefAbsolutePath() resolves manifest hrefs relative to the OPF directory.
+    // This handles NCX src values like "../Text/chapter.xhtml" correctly.
+    val ncxHrefRootPath = File(ncxFilePath ?: "").parentFile ?: File("")
+    fun String.ncxHrefAbsolutePath(): String {
+        // Strip fragment before resolving path, then re-append it
+        val fragIdx = indexOf('#')
+        val pathPart = if (fragIdx >= 0) substring(0, fragIdx) else this
+        val frag = if (fragIdx >= 0) substring(fragIdx) else ""
+        return File(ncxHrefRootPath, pathPart).canonicalFile
+            .toPath()
+            .invariantSeparatorsPathString
+            .removePrefix("/") + frag
+    }
 
     val doc = Jsoup.parse(ncxFile.data.inputStream(), "UTF-8", "")
     val navMap = doc.selectFirst("navMap") ?: throw Exception("Invalid NCX file: navMap not found")
 
     val tocEntries = navMap.select("navPoint").map { navPoint ->
         val title = navPoint.selectFirst("navLabel")?.selectFirst("text")?.text() ?: ""
-        var link = navPoint.selectFirst("content")?.attribute("src")?.value ?: "" // Add the prefix
-        if (!link.startsWith(rootPath))
-            link = "$rootPath/$link"
+        // Resolve the src relative to the NCX file location so that paths like
+        // "../Text/chapter.xhtml" are canonicalized to "Text/chapter.xhtml" and
+        // match what hrefAbsolutePath() produces for the spine items.
+        val link = navPoint.selectFirst("content")?.attribute("src")?.value
+            ?.decodedURL?.ncxHrefAbsolutePath() ?: ""
         ToCEntry(title, link)
     }
 
@@ -142,11 +158,15 @@ suspend fun epubParser(
     }
 
     fun findTocEntryForChapter(tocEntries: List<ToCEntry>, chapterUrl: String): ToCEntry? {
-        // Remove any potential fragment identifier from chapterUrl
-        val chapterUrlWithoutFragment = chapterUrl.substringBefore('#')
-        return tocEntries.firstOrNull {
-            it.chapterLink.substringBefore('#').equals(chapterUrlWithoutFragment, ignoreCase = true)
-        }
+        // Normalize a path by stripping fragment identifiers and the rootPath prefix so that
+        // "OEBPS/Text/chapter.xhtml" and "Text/chapter.xhtml" are treated as equal.
+        // This handles NCX files whose src values resolve outside the rootPath directory.
+        val rootPrefix = if (rootPath.isEmpty()) "" else "$rootPath/"
+        fun String.normalize() = substringBefore('#')
+            .removePrefix(rootPrefix)
+            .lowercase()
+        val normalizedUrl = chapterUrl.normalize()
+        return tocEntries.firstOrNull { it.chapterLink.normalize() == normalizedUrl }
     }
 
     // Iterate through spine items to build chapters list
@@ -169,15 +189,19 @@ suspend fun epubParser(
             val parser = EpubXMLFileParser(spineUrl, files[spineUrl]?.data ?: ByteArray(0), files)
             val res = parser.parseAsDocument()
 
-            // If currentTOC exists and we have a new tocEntry, add the accumulated chapter content
-            if (currentTOC != null && tocEntry != null && currentChapterBody.isNotEmpty()) {
-                chapters.add(
-                    Chapter(
-                        currentTOC!!.chapterLink,
-                        currentTOC!!.chapterTitle,
-                        currentChapterBody
+            // If currentTOC exists and we have a new tocEntry, save the accumulated chapter content
+            // NOTE: save even if body is empty, to avoid silently dropping chapters and
+            // overwriting currentTOC without having saved the previous chapter.
+            if (currentTOC != null && tocEntry != null) {
+                if (currentChapterBody.isNotEmpty()) {
+                    chapters.add(
+                        Chapter(
+                            currentTOC!!.chapterLink,
+                            currentTOC!!.chapterTitle,
+                            currentChapterBody
+                        )
                     )
-                )
+                }
                 currentChapterBody = ""
             }
 
@@ -201,8 +225,8 @@ suspend fun epubParser(
         }
     }
 
-    // Add the last chapter if any content remains
-    if (currentTOC != null && currentChapterBody.isNotEmpty()) {
+    // Add the last chapter (even if body is empty — the chapter still exists in the TOC)
+    if (currentTOC != null) {
         chapters.add(
             Chapter(
                 currentTOC!!.chapterLink,

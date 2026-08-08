@@ -46,9 +46,8 @@ object LocalServerSyncModule {
     @Provides
     @Singleton
     fun provideLocalServerSyncRepository(
-        apiService: LocalServerApiService,
-        authService: LocalServerAuthService
-    ): LocalServerSyncRepository = LocalServerSyncRepository(apiService, authService)
+        apiService: LocalServerApiService
+    ): LocalServerSyncRepository = LocalServerSyncRepository(apiService)
 
     @Provides
     @Singleton
@@ -62,8 +61,15 @@ object LocalServerSyncModule {
         authService: LocalServerAuthService,
         syncRepository: LocalServerSyncRepository,
         localLibraryRepository: LocalLibraryRepository,
-        imageService: LocalServerImageService
-    ): LocalServerSyncManager = LocalServerSyncManager(authService, syncRepository, localLibraryRepository, imageService)
+        imageService: LocalServerImageService,
+        tokenStorage: AuthTokenStorage
+    ): LocalServerSyncManager = LocalServerSyncManager(
+        authService = authService,
+        syncRepository = syncRepository,
+        localLibraryRepository = localLibraryRepository,
+        imageService = imageService,
+        tokenStorage = tokenStorage
+    )
 
     @Provides
     @Singleton

@@ -8,6 +8,8 @@ import androidx.activity.viewModels
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import my.noveldoksuha.coreui.BaseActivity
 import my.noveldoksuha.coreui.composableActions.SetSystemBarTransparent
@@ -42,6 +44,11 @@ class ChaptersActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        viewModel.bookDeletedEvent
+            .onEach { finish() }
+            .launchIn(lifecycleScope)
+
         setContent {
             Theme(themeProvider = themeProvider) {
                 SetSystemBarTransparent()
@@ -71,6 +78,7 @@ class ChaptersActivity : BaseActivity() {
                     onOpenInBrowser = { navigationRoutes.webView(this, url = it).let(::startActivity) },
                     onGlobalSearchClick = { navigationRoutes.globalSearch(this, text = it).let(::startActivity) },
                     onExportAsEpub = viewModel::exportAsEpub,
+                    onDeleteBookFromDb = viewModel::deleteBookFromDb,
                 )
             }
         }

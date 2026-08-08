@@ -5,262 +5,205 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import my.noveldokusha.core.AppFileResolver
-import my.noveldokusha.tooling.local_server_sync.data.ImageBackupItem
+import my.noveldokusha.tooling.local_server_sync.data.ImageManifestEntry
 import timber.log.Timber
 import java.io.File
+import java.io.FileInputStream
 import java.security.MessageDigest
 import java.util.Base64
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Walks `folderBooks` to enumerate the user's image files and converts them
+ * into [ImageManifestEntry] objects. Computes content-addressed SHA-256 hex
+ * hashes the same way the backend does (lowercase hex of the raw bytes).
+ *
+ * Restore writes raw bytes downloaded from the server back to disk using the
+ * same `<bookFolder>/<relativePath>` layout.
+ */
 @Singleton
 class LocalServerImageService @Inject constructor(
     @ApplicationContext private val context: Context,
     private val appFileResolver: AppFileResolver
 ) {
     companion object {
-        private val SUPPORTED_IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "gif", "webp", "bmp")
+        private val SUPPORTED_EXTENSIONS = setOf("jpg", "jpeg", "png", "gif", "webp", "bmp")
         private const val COVER_IMAGE_NAME = "__cover_image"
-        private const val MAX_IMAGE_SIZE_MB = 5 // Reduced from 10MB to 5MB
-        private const val MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024
-        private const val MAX_BATCH_SIZE = 10 // Reduced from 50 to 10 for memory safety
-        private const val MEMORY_THRESHOLD_MB = 50 // Minimum free memory required
+        private const val MAX_IMAGE_SIZE_BYTES = 10L * 1024L * 1024L // 10 MiB
     }
 
-    suspend fun discoverAllImages(): List<ImageBackupItem> = withContext(Dispatchers.IO) {
-        val discoveredImages = mutableListOf<ImageBackupItem>()
+    val folderBooks: File get() = appFileResolver.folderBooks
 
-        try {
-            logMemoryStatus("Start of discoverAllImages")
+    // ── Discovery ────────────────────────────────────────────────────────
 
-            val booksDirectory = appFileResolver.folderBooks
-
-            if (!booksDirectory.exists() || !booksDirectory.isDirectory) {
-                Timber.w("Books directory does not exist: ${booksDirectory.absolutePath}")
-                return@withContext emptyList()
-            }
-
-            val bookFolders = booksDirectory.listFiles() ?: emptyArray()
-            Timber.d("Found ${bookFolders.size} book folders to scan")
-
-            // Scan each book folder recursively with batch processing
-            bookFolders.forEachIndexed { index, bookFolder ->
-                if (bookFolder.isDirectory) {
-                    logMemoryStatus("Before scanning book folder ${index + 1}/${bookFolders.size}: ${bookFolder.name}")
-
-                    val bookUrl = decodeBookFolderName(bookFolder.name)
-                    val bookImages = scanBookDirectoryRecursively(bookFolder, bookUrl, "")
-                    discoveredImages.addAll(bookImages)
-
-                    logMemoryStatus("After scanning book folder ${index + 1}/${bookFolders.size}, total images: ${discoveredImages.size}")
-
-                    // Force garbage collection if we have too many images in memory
-                    if (discoveredImages.size > MAX_BATCH_SIZE * 2) {
-                        Timber.d("Triggering GC at ${discoveredImages.size} images")
-                        System.gc()
-                        logMemoryStatus("After GC at ${discoveredImages.size} images")
-                    }
-                }
-            }
-
-            logMemoryStatus("End of discoverAllImages")
-            Timber.d("Discovered ${discoveredImages.size} images across ${bookFolders.size} books")
-            discoveredImages
-        } catch (e: OutOfMemoryError) {
-            logMemoryStatus("OutOfMemoryError in discoverAllImages")
-            Timber.e("Out of memory while discovering images. Processed ${discoveredImages.size} images before failure")
-            // Return what we've processed so far
-            discoveredImages
-        } catch (e: Exception) {
-            logMemoryStatus("Exception in discoverAllImages")
-            Timber.e(e, "Error discovering images")
-            emptyList()
+    /**
+     * Scans the entire books directory and returns one [ImageManifestEntry]
+     * per local image file, with SHA-256 hex computed by streaming the file.
+     * Large files (>10 MiB) are skipped.
+     */
+    suspend fun discoverAllImages(): List<ImageManifestEntry> = withContext(Dispatchers.IO) {
+        val booksDir = folderBooks
+        if (!booksDir.exists() || !booksDir.isDirectory) {
+            Timber.w("Books directory does not exist: ${booksDir.absolutePath}")
+            return@withContext emptyList()
         }
+
+        val out = mutableListOf<ImageManifestEntry>()
+        booksDir.listFiles()?.forEach { bookFolder ->
+            if (!bookFolder.isDirectory) return@forEach
+            val bookUrl = decodeBookFolderName(bookFolder.name)
+            scanInto(bookFolder, bookUrl, "", out)
+        }
+        Timber.d("Discovered ${out.size} images across all books")
+        out
     }
 
-    private suspend fun scanBookDirectoryRecursively(
+    /** Same as [discoverAllImages] but limited to a single book URL. */
+    suspend fun discoverImagesForBook(bookUrl: String): List<ImageManifestEntry> =
+        withContext(Dispatchers.IO) {
+            val folder = File(folderBooks, encodeBookFolderName(bookUrl))
+            if (!folder.exists() || !folder.isDirectory) return@withContext emptyList()
+            val out = mutableListOf<ImageManifestEntry>()
+            scanInto(folder, bookUrl, "", out)
+            out
+        }
+
+    private fun scanInto(
         directory: File,
         bookUrl: String,
-        relativePath: String
-    ): List<ImageBackupItem> = withContext(Dispatchers.IO) {
-        val images = mutableListOf<ImageBackupItem>()
-
-        try {
-            directory.listFiles()?.forEach { file ->
-                if (file.isDirectory) {
-                    // Recursively scan subdirectories
+        relativePath: String,
+        out: MutableList<ImageManifestEntry>
+    ) {
+        directory.listFiles()?.forEach { file ->
+            when {
+                file.isDirectory -> {
                     val subPath = if (relativePath.isEmpty()) file.name else "$relativePath/${file.name}"
-                    val subImages = scanBookDirectoryRecursively(file, bookUrl, subPath)
-                    images.addAll(subImages)
-                } else if (file.isFile && isImageFile(file)) {
-                    // Create image backup item
-                    val filePath = if (relativePath.isEmpty()) file.name else "$relativePath/${file.name}"
-                    val imageItem = createImageBackupItem(file, bookUrl, filePath)
-                    if (imageItem != null) {
-                        images.add(imageItem)
+                    scanInto(file, bookUrl, subPath, out)
+                }
+                file.isFile && isImageFile(file) -> {
+                    if (file.length() > MAX_IMAGE_SIZE_BYTES) {
+                        Timber.w("Skipping large image: ${file.absolutePath} (${file.length() / 1024 / 1024} MiB)")
+                        return@forEach
                     }
+                    val rel = if (relativePath.isEmpty()) file.name else "$relativePath/${file.name}"
+                    val sha = sha256HexStreaming(file) ?: return@forEach
+                    out += ImageManifestEntry(
+                        bookUrl = bookUrl,
+                        relativePath = rel,
+                        fileName = file.name,
+                        sha256 = sha,
+                        size = file.length(),
+                        isCoverImage = rel.contains(COVER_IMAGE_NAME),
+                        updatedAt = file.lastModified(),
+                        deleted = false
+                    )
                 }
             }
-        } catch (e: Exception) {
-            Timber.e(e, "Error scanning directory: ${directory.absolutePath}")
         }
-
-        images
     }
 
-    private fun createImageBackupItem(file: File, bookUrl: String, relativePath: String): ImageBackupItem? {
+    // ── Read / write helpers ─────────────────────────────────────────────
+
+    fun isImageFile(file: File): Boolean =
+        file.extension.lowercase() in SUPPORTED_EXTENSIONS
+
+    fun guessMimeType(fileName: String): String =
+        when (fileName.substringAfterLast('.', "").lowercase()) {
+            "jpg", "jpeg" -> "image/jpeg"
+            "png" -> "image/png"
+            "gif" -> "image/gif"
+            "webp" -> "image/webp"
+            "bmp" -> "image/bmp"
+            else -> "application/octet-stream"
+        }
+
+    /**
+     * Locates a file in the books folder for [entry] and returns its raw bytes
+     * along with its SHA-256, or null if it no longer exists / can't be read.
+     */
+    fun readBytesForEntry(entry: ImageManifestEntry): ByteArray? = try {
+        val folder = File(folderBooks, encodeBookFolderName(entry.bookUrl))
+        val file = File(folder, entry.relativePath)
+        if (!file.isFile) null
+        else if (file.length() > MAX_IMAGE_SIZE_BYTES) null
+        else file.readBytes()
+    } catch (e: Exception) {
+        Timber.w(e, "readBytesForEntry failed for ${entry.relativePath}")
+        null
+    }
+
+    /**
+     * Writes [bytes] downloaded from the server to the on-disk location
+     * implied by [entry]. Returns true on success.
+     */
+    fun writeBytesForEntry(entry: ImageManifestEntry, bytes: ByteArray): Boolean {
         return try {
-            logMemoryStatus("Before processing image: ${file.name} (${file.length() / 1024}KB)")
-
-            // Check file size first to avoid loading large files
-            if (file.length() > MAX_IMAGE_SIZE_BYTES) {
-                Timber.w("Skipping large image file (${file.length() / 1024 / 1024}MB): ${file.absolutePath}")
-                return null
-            }
-
-            // Read file in chunks to be more memory efficient
-            logMemoryStatus("Before reading file bytes: ${file.name}")
-            val content = file.readBytes()
-            logMemoryStatus("After reading file bytes: ${file.name} (${content.size / 1024}KB)")
-
-            logMemoryStatus("Before generating hash: ${file.name}")
-            val hash = generateFileHash(content)
-            logMemoryStatus("After generating hash: ${file.name}")
-
-            // Use streaming Base64 encoding for large files
-            logMemoryStatus("Before Base64 encoding: ${file.name}")
-            val encodedContent = try {
-                val encoded = Base64.getEncoder().encodeToString(content)
-                logMemoryStatus("After Base64 encoding: ${file.name} (encoded size: ${encoded.length / 1024}KB)")
-                encoded
-            } catch (e: OutOfMemoryError) {
-                logMemoryStatus("OutOfMemoryError during Base64 encoding: ${file.name}")
-                Timber.w("Out of memory encoding image, skipping: ${file.absolutePath}")
-                return null
-            }
-
-            logMemoryStatus("Before creating ImageBackupItem: ${file.name}")
-            val imageItem = ImageBackupItem(
-                bookUrl = bookUrl,
-                relativePath = relativePath,
-                fileName = file.name,
-                content = encodedContent,
-                hash = hash,
-                size = content.size.toLong(),
-                lastModified = file.lastModified(),
-                isCoverImage = relativePath.contains(COVER_IMAGE_NAME)
-            )
-            logMemoryStatus("After creating ImageBackupItem: ${file.name}")
-
-            imageItem
-        } catch (e: OutOfMemoryError) {
-            logMemoryStatus("OutOfMemoryError in createImageBackupItem: ${file.name}")
-            Timber.w("Out of memory processing image, skipping: ${file.absolutePath}")
-            null
-        } catch (e: Exception) {
-            logMemoryStatus("Exception in createImageBackupItem: ${file.name}")
-            Timber.e(e, "Error creating image backup item for: ${file.absolutePath}")
-            null
-        }
-    }
-
-    suspend fun restoreImages(images: List<ImageBackupItem>): Result<Int> = withContext(Dispatchers.IO) {
-        var restoredCount = 0
-
-        try {
-            val booksDirectory = appFileResolver.folderBooks
-            if (!booksDirectory.exists()) {
-                booksDirectory.mkdirs()
-            }
-
-            images.forEach { imageItem ->
-                try {
-                    val success = restoreImage(imageItem, booksDirectory)
-                    if (success) {
-                        restoredCount++
-                    }
-                } catch (e: Exception) {
-                    Timber.e(e, "Error restoring image: ${imageItem.relativePath}")
-                }
-            }
-
-            Timber.d("Successfully restored $restoredCount/${images.size} images")
-            Result.success(restoredCount)
-        } catch (e: Exception) {
-            Timber.e(e, "Error during image restoration")
-            Result.failure(e)
-        }
-    }
-
-    private fun restoreImage(imageItem: ImageBackupItem, booksDirectory: File): Boolean {
-        return try {
-            // Decode book folder name and create book directory
-            val bookFolderName = encodeBookFolderName(imageItem.bookUrl)
-            val bookDirectory = File(booksDirectory, bookFolderName)
-
-            // Create the full path including subdirectories
-            val imageFile = File(bookDirectory, imageItem.relativePath)
-            val parentDir = imageFile.parentFile
-
-            if (parentDir != null && !parentDir.exists()) {
-                parentDir.mkdirs()
-            }
-
-            // Decode and write the image content
-            val content = Base64.getDecoder().decode(imageItem.content)
-            imageFile.writeBytes(content)
-
-            // Set last modified time
-            imageFile.setLastModified(imageItem.lastModified)
-
-            Timber.d("Restored image: ${imageFile.absolutePath}")
+            val booksDir = folderBooks
+            if (!booksDir.exists()) booksDir.mkdirs()
+            val bookDir = File(booksDir, encodeBookFolderName(entry.bookUrl))
+            val file = File(bookDir, entry.relativePath)
+            file.parentFile?.mkdirs()
+            file.writeBytes(bytes)
+            if (entry.updatedAt > 0L) file.setLastModified(entry.updatedAt)
             true
         } catch (e: Exception) {
-            Timber.e(e, "Failed to restore image: ${imageItem.relativePath}")
+            Timber.e(e, "writeBytesForEntry failed: ${entry.relativePath}")
             false
         }
     }
 
-    // Make these methods accessible to the sync manager
-    fun isImageFile(file: File): Boolean {
-        val extension = file.extension.lowercase()
-        return extension in SUPPORTED_IMAGE_EXTENSIONS
-    }
-
-    fun createImageBackupItemSafe(file: File, bookUrl: String, relativePath: String): ImageBackupItem? {
-        return createImageBackupItem(file, bookUrl, relativePath)
-    }
-
-    fun decodeBookFolderName(folderName: String): String {
+    fun deleteForEntry(entry: ImageManifestEntry): Boolean {
         return try {
-            String(Base64.getUrlDecoder().decode(folderName))
-        } catch (e: Exception) {
-            Timber.w("Failed to decode folder name: $folderName")
-            folderName
+            val bookDir = File(folderBooks, encodeBookFolderName(entry.bookUrl))
+            File(bookDir, entry.relativePath).delete()
+        } catch (_: Exception) {
+            false
         }
     }
 
-    // Make appFileResolver accessible
-    val folderBooks: File get() = this.appFileResolver.folderBooks
+    // ── Hashing / folder name encoding ───────────────────────────────────
 
-    private fun generateFileHash(content: ByteArray): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        val hash = digest.digest(content)
-        return Base64.getEncoder().encodeToString(hash)
+    /**
+     * SHA-256 hex (lowercase) over the file's raw bytes, computed in 64 KiB
+     * chunks so we never hold the whole file in memory.
+     */
+    fun sha256HexStreaming(file: File): String? = try {
+        val md = MessageDigest.getInstance("SHA-256")
+        FileInputStream(file).use { input ->
+            val buf = ByteArray(64 * 1024)
+            while (true) {
+                val read = input.read(buf)
+                if (read <= 0) break
+                md.update(buf, 0, read)
+            }
+        }
+        md.digest().toHexLower()
+    } catch (e: Exception) {
+        Timber.w(e, "sha256 failed for ${file.absolutePath}")
+        null
     }
 
-    private fun encodeBookFolderName(bookUrl: String): String {
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bookUrl.toByteArray())
+    fun sha256Hex(bytes: ByteArray): String =
+        MessageDigest.getInstance("SHA-256").digest(bytes).toHexLower()
+
+    fun encodeBookFolderName(bookUrl: String): String =
+        Base64.getUrlEncoder().withoutPadding().encodeToString(bookUrl.toByteArray())
+
+    fun decodeBookFolderName(folderName: String): String = try {
+        String(Base64.getUrlDecoder().decode(folderName))
+    } catch (_: Exception) {
+        Timber.w("Failed to decode folder name: $folderName")
+        folderName
     }
 
-    private fun logMemoryStatus(context: String) {
-        val runtime = Runtime.getRuntime()
-        val maxMemory = runtime.maxMemory() / 1024 / 1024 // MB
-        val totalMemory = runtime.totalMemory() / 1024 / 1024 // MB
-        val freeMemory = runtime.freeMemory() / 1024 / 1024 // MB
-        val usedMemory = totalMemory - freeMemory
-        val availableMemory = maxMemory - usedMemory
-
-        Timber.d("[$context] Memory - Free: ${freeMemory}MB, Used: ${usedMemory}MB, Available: ${availableMemory}MB, Max: ${maxMemory}MB")
+    private fun ByteArray.toHexLower(): String {
+        val sb = StringBuilder(size * 2)
+        val hex = "0123456789abcdef".toCharArray()
+        for (b in this) {
+            val v = b.toInt() and 0xFF
+            sb.append(hex[v ushr 4]).append(hex[v and 0x0F])
+        }
+        return sb.toString()
     }
 }

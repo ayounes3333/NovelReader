@@ -203,6 +203,10 @@
     <string name="change_cover">Change cover</string>
     <string name="export_as_epub">Export as EPUB</string>
     <string name="epub_export_started">EPUB export started — check your Downloads folder</string>
+    <string name="delete_book_from_database">Delete book from database</string>
+    <string name="delete_book_confirmation_title">Delete book?</string>
+    <string name="delete_book_confirmation_body">This will permanently remove the book and all its chapters from the database. This cannot be undone.</string>
+    <string name="book_deleted">Book deleted from database</string>
 	<string name="app_updates">App updates</string>
     <string name="automatically_check_for_app_updates">Automatically check for app updates</string>
     <string name="check_for_app_updates_now">Check for app updates now</string>

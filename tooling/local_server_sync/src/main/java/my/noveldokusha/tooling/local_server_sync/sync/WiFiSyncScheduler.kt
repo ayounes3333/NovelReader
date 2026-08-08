@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.net.wifi.WifiManager
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -39,6 +40,10 @@ class WiFiSyncScheduler @Inject constructor(
                 Timber.d("WiFiSyncScheduler: WiFi available")
                 if (!tokenStorage.isAutoSyncEnabled()) return
                 if (tokenStorage.getServerUrls().isEmpty()) return
+                if (!isOnHomeWifi()) {
+                    Timber.d("WiFiSyncScheduler: not on a known home WiFi, skipping bulk sync")
+                    return
+                }
 
                 WorkManager.getInstance(context).enqueueUniqueWork(
                     WiFiSyncWorker.TAG,
@@ -58,6 +63,32 @@ class WiFiSyncScheduler @Inject constructor(
             connectivityManager.unregisterNetworkCallback(it)
             networkCallback = null
             Timber.d("WiFiSyncScheduler: unregistered network callback")
+        }
+    }
+
+    /**
+     * Returns true when the current WiFi connection's BSSID is one the user
+     * marked as "home WiFi" in settings, OR no home BSSIDs have been
+     * configured yet (in which case any WiFi counts).
+     *
+     * Requires `ACCESS_FINE_LOCATION` on API 27+; if the permission is
+     * missing, `connectionInfo.bssid` returns `"02:00:00:00:00:00"`, which we
+     * treat as "unknown" and refuse to bulk-sync unless the home list is
+     * empty.
+     */
+    @Suppress("DEPRECATION")
+    private fun isOnHomeWifi(): Boolean {
+        val home = tokenStorage.getHomeBssids()
+        if (home.isEmpty()) return true
+        return try {
+            val wifi = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+                ?: return false
+            val bssid = wifi.connectionInfo?.bssid?.lowercase()
+            if (bssid.isNullOrBlank() || bssid == "02:00:00:00:00:00") false
+            else home.any { it.equals(bssid, ignoreCase = true) }
+        } catch (e: SecurityException) {
+            Timber.w(e, "WiFiSyncScheduler: BSSID read denied")
+            false
         }
     }
 }

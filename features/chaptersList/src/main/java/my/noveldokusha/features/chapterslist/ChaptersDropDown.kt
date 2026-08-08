@@ -3,6 +3,7 @@ package my.noveldokusha.features.chapterslist
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Search
@@ -21,6 +22,7 @@ internal fun ChaptersDropDown(
     onResumeReading: () -> Unit,
     onChangeCover: () -> Unit,
     onExportAsEpub: () -> Unit,
+    onDeleteBookFromDb: () -> Unit,
 ) {
     if (!isLocalSource) DropdownMenuItem(
         onClick = openInBrowser,
@@ -76,6 +78,18 @@ internal fun ChaptersDropDown(
             Icon(
                 Icons.Outlined.Download,
                 stringResource(R.string.export_as_epub),
+            )
+        }
+    )
+    DropdownMenuItem(
+        onClick = onDeleteBookFromDb,
+        text = {
+            Text(text = stringResource(R.string.delete_book_from_database))
+        },
+        leadingIcon = {
+            Icon(
+                Icons.Outlined.Delete,
+                stringResource(R.string.delete_book_from_database),
             )
         }
     )
