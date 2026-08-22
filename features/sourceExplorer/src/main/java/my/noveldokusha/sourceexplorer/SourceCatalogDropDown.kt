@@ -16,8 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.aliyounes.aurui.components.AurButton
-import com.aliyounes.aurui.components.AurButtonType
+import my.noveldoksuha.coreui.components.MyButton
 import my.noveldokusha.core.appPreferences.ListLayoutMode
 
 @Composable
@@ -40,19 +39,23 @@ internal fun SourceCatalogDropDown(
         ) {
             Text(text = stringResource(R.string.layout))
             OutlinedCard {
-                AurButton(
+                MyButton(
                     text = stringResource(id = R.string.list),
                     onClick = { onListLayoutModeChange(ListLayoutMode.VerticalList) },
-                    type = if (listLayoutMode == ListLayoutMode.VerticalList) AurButtonType.Primary else AurButtonType.Outlined,
-                    fullWidth = true,
-                    cornerRadius = 0.dp
+                    selected = listLayoutMode == ListLayoutMode.VerticalList,
+                    textAlign = TextAlign.Center,
+                    outerPadding = 0.dp,
+                    shape = RoundedCornerShape(0.dp),
+                    modifier = Modifier.fillMaxWidth()
                 )
-                AurButton(
+                MyButton(
                     text = stringResource(id = R.string.grid),
                     onClick = { onListLayoutModeChange(ListLayoutMode.VerticalGrid) },
-                    type = if (listLayoutMode == ListLayoutMode.VerticalGrid) AurButtonType.Primary else AurButtonType.Outlined,
-                    fullWidth = true,
-                    cornerRadius = 0.dp
+                    selected = listLayoutMode == ListLayoutMode.VerticalGrid,
+                    textAlign = TextAlign.Center,
+                    outerPadding = 0.dp,
+                    shape = RoundedCornerShape(0.dp),
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }

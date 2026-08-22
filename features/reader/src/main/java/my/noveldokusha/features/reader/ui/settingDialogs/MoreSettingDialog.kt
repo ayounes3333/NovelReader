@@ -19,6 +19,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import my.noveldoksuha.coreui.theme.ColorAccent
 import my.noveldokusha.reader.R
+import my.noveldoksuha.coreui.theme.AppElevation
 
 @Composable
 internal fun MoreSettingDialog(
@@ -30,7 +31,7 @@ internal fun MoreSettingDialog(
     onFullScreen: (Boolean) -> Unit,
 ) {
     ElevatedCard(
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 12.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = AppElevation.dialog)
     ) {
         // Allow text selection
         ListItem(

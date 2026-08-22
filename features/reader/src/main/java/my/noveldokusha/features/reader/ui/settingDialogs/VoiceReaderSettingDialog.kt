@@ -97,6 +97,7 @@ import my.noveldokusha.core.appPreferences.VoicePredefineState
 import my.noveldokusha.features.reader.features.TextToSpeechSettingData
 import my.noveldokusha.reader.R
 import my.noveldokusha.text_to_speech.VoiceData
+import my.noveldoksuha.coreui.theme.AppElevation
 
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -124,7 +125,7 @@ internal fun VoiceReaderSettingDialog(
             }
         }
         ElevatedCard(
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 12.dp)
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = AppElevation.dialog)
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),

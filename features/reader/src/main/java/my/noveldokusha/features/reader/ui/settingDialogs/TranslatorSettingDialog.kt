@@ -45,6 +45,7 @@ import my.noveldoksuha.coreui.theme.clickableWithUnboundedIndicator
 import my.noveldoksuha.coreui.theme.ifCase
 import my.noveldokusha.features.reader.features.LiveTranslationSettingData
 import my.noveldokusha.reader.R
+import my.noveldoksuha.coreui.theme.AppElevation
 
 @Composable
 internal fun TranslatorSettingDialog(
@@ -54,7 +55,7 @@ internal fun TranslatorSettingDialog(
     var modelSelectorExpandedForTarget by rememberSaveable { mutableStateOf(false) }
     var rowSize by remember { mutableStateOf(Size.Zero) }
     ElevatedCard(
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 12.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = AppElevation.dialog)
     ) {
         Row(
             modifier = Modifier

@@ -16,8 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.aliyounes.aurui.components.AurButton
-import com.aliyounes.aurui.components.AurButtonType
+import my.noveldoksuha.coreui.components.MyButton
 import my.noveldoksuha.data.LanguageItem
 
 @Composable
@@ -41,12 +40,14 @@ internal fun LanguagesDropDown(
             Text(text = stringResource(R.string.sources_languages))
             OutlinedCard {
                 languageItemList.forEach { lang ->
-                    AurButton(
+                    MyButton(
                         text = stringResource(id = lang.language.nameResId),
                         onClick = { onSourceLanguageItemToggle(lang) },
-                        type = if (lang.active) AurButtonType.Primary else AurButtonType.Outlined,
-                        fullWidth = true,
-                        cornerRadius = 0.dp
+                        selected = lang.active,
+                        textAlign = TextAlign.Center,
+                        outerPadding = 0.dp,
+                        shape = RoundedCornerShape(0.dp),
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }

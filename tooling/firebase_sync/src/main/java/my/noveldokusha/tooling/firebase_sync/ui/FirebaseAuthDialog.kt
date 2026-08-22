@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import my.noveldoksuha.coreui.theme.AppElevation
 
 @Composable
 fun FirebaseAuthDialog(
@@ -44,7 +45,7 @@ fun FirebaseAuthDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = AppElevation.dialog),
                 shape = MaterialTheme.shapes.large,
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface,

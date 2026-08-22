@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import my.noveldoksuha.coreui.components.ErrorView
 import my.noveldokusha.chapterslist.R
 import my.noveldokusha.feature.local_database.ChapterWithContext
+import my.noveldoksuha.coreui.theme.AppSpacing
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -61,7 +62,7 @@ internal fun ChaptersScreenBody(
     ) {
         LazyColumn(
             state = lazyListState,
-            contentPadding = PaddingValues(bottom = 300.dp),
+            contentPadding = PaddingValues(bottom = AppSpacing.scrollableContentBottomPadding),
         ) {
             item(
                 key = "header",

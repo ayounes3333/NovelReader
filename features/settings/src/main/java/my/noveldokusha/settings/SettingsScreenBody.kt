@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import my.noveldoksuha.coreui.theme.AppSpacing
 import my.noveldoksuha.coreui.theme.InternalTheme
 import my.noveldoksuha.coreui.theme.PreviewThemes
 import my.noveldoksuha.coreui.theme.Themes
@@ -107,7 +108,7 @@ internal fun SettingsScreenBody(
             onTestIndividualSource = onTestIndividualSource,
             onTestIndividualDatabase = onTestIndividualDatabase
         )
-        Spacer(modifier = Modifier.height(500.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.scrollableContentBottomPadding))
         Text(
             text = "(°.°)",
             modifier = Modifier

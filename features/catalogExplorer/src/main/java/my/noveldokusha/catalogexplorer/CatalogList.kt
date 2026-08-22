@@ -39,6 +39,7 @@ import my.noveldokusha.scraper.DatabaseInterface
 import my.noveldokusha.scraper.SourceInterface
 import my.noveldokusha.scraper.fixtures.fixturesCatalogList
 import my.noveldokusha.scraper.fixtures.fixturesDatabaseList
+import my.noveldoksuha.coreui.theme.AppSpacing
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -51,7 +52,7 @@ internal fun CatalogList(
     onSourceSetPinned: (id: String, pinned: Boolean) -> Unit,
 ) {
     LazyColumn(
-        contentPadding = PaddingValues(bottom = 300.dp),
+        contentPadding = PaddingValues(bottom = AppSpacing.scrollableContentBottomPadding),
         modifier = Modifier.padding(paddingValues = innerPadding)
     ) {
         item {

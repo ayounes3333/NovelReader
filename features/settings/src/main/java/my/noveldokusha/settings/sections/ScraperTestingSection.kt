@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import my.noveldokusha.settings.R
+import my.noveldoksuha.coreui.theme.AppElevation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -106,7 +107,7 @@ fun ScraperTestingSection(
         if (sources.isNotEmpty() || databases.isNotEmpty()) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = AppElevation.card)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp)
@@ -232,7 +233,7 @@ private fun DetailedTestResultItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 2.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = AppElevation.card),
         shape = RoundedCornerShape(8.dp)
     ) {
         Column(

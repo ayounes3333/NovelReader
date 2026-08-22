@@ -57,6 +57,7 @@ import my.noveldoksuha.databaseexplorer.R
 import my.noveldoksuha.mappers.mapToBookMetadata
 import my.noveldokusha.scraper.SearchGenre
 import my.noveldokusha.feature.local_database.BookMetadata
+import my.noveldoksuha.coreui.theme.AppElevation
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -295,7 +296,7 @@ private fun Container(
 ) {
     ElevatedCard(
         modifier = modifier,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = AppElevation.none),
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         shape = MaterialTheme.shapes.small,
         content = content,

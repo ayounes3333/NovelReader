@@ -38,6 +38,7 @@ import my.noveldoksuha.coreui.theme.InternalTheme
 import my.noveldoksuha.coreui.theme.PreviewThemes
 import my.noveldoksuha.coreui.theme.colorApp
 import my.noveldoksuha.databaseexplorer.R
+import my.noveldoksuha.coreui.theme.AppSpacing
 
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -120,7 +121,7 @@ internal fun DatabaseSearchBottomSheet(
                     }
                 )
             }
-            Spacer(modifier = Modifier.height(300.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.scrollableContentBottomPadding))
         }
     }
 }

@@ -47,6 +47,7 @@ import my.noveldoksuha.coreui.theme.Themes
 import my.noveldokusha.features.reader.tools.FontsLoader
 import my.noveldokusha.features.reader.ui.ReaderScreenState
 import my.noveldokusha.reader.R
+import my.noveldoksuha.coreui.theme.AppElevation
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -58,7 +59,7 @@ internal fun StyleSettingDialog(
     onThemeChange: (Themes) -> Unit,
 ) {
     ElevatedCard(
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 12.dp)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = AppElevation.dialog)
     ) {
         // Text size
         var currentTextSize by remember { mutableFloatStateOf(state.textSize.value) }

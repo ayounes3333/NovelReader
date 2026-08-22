@@ -51,8 +51,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.aliyounes.aurui.components.AurErrorView
-import com.aliyounes.aurui.components.AurErrorType
+import my.noveldoksuha.coreui.components.ErrorView
 import my.noveldoksuha.coreui.components.Loading
 import my.noveldoksuha.coreui.components.LoadingSnackbar
 import my.noveldoksuha.coreui.components.NoData
@@ -101,7 +100,7 @@ fun BrowseScreen(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(100.dp)
-                    .background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.primary, shape = MaterialTheme.shapes.small)
             ) {
                 CircularProgressIndicator()
             }
@@ -168,14 +167,11 @@ fun BrowseScreen(
 
                 is BrowseScreenState.Error -> {
                     uiState.error.printStackTrace()
-                    AurErrorView(
-                        errorType = AurErrorType.Custom,
-                        title = "Browse Error",
-                        message = "Unable to browse directory",
-                        onRetry = {
+                    ErrorView(
+                        error = "Unable to browse directory",
+                        onReload = {
                             viewModel.browse(FileManager.getCurrentDirectory())
-                        },
-                        retryText = "Try Again"
+                        }
                     )
                 }
 
@@ -216,7 +212,7 @@ fun FolderListItem(
         modifier = modifier
             .padding(4.dp)
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer, MaterialTheme.shapes.small)
             .clickable {
                 if (directory.isDirectory)
                     onFolderClick(directory)
@@ -239,14 +235,13 @@ fun FolderListItem(
         Column(modifier = Modifier.padding(8.dp)) {
             Text(
                 text = directory.name,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
             if (content.isNotEmpty()) {
                 Text(
                     text = content,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -275,7 +270,7 @@ fun FolderGridItem(
         modifier = modifier
             .padding(4.dp)
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer, MaterialTheme.shapes.small)
             .clickable {
                 if (directory.isDirectory)
                     onFolderClick(directory)
@@ -298,14 +293,13 @@ fun FolderGridItem(
         Column(modifier = Modifier.padding(8.dp)) {
             Text(
                 text = directory.name,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
             if (content.isNotEmpty()) {
                 Text(
                     text = content,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -418,7 +412,7 @@ fun FilesHeader(
         modifier = Modifier
             .background(
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                shape = RoundedCornerShape(4.dp)
+                shape = MaterialTheme.shapes.extraSmall
             )
             .fillMaxWidth()
             .padding(8.dp)
@@ -438,7 +432,7 @@ fun FilesHeader(
             )
             Text(
                 text = "Storage Root",
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.clickable { parentClicked(FileManager.getStorageRoot()!!) }
             )
@@ -464,15 +458,14 @@ fun FilesHeader(
                         )
                         Text(
                             text = parent.name,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 14.sp,
+                            style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier
                                 .padding(horizontal = 4.dp)
                                 .clickable { parentClicked.invoke(parent) }
                                 .background(
                                     MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
-                                    RoundedCornerShape(4.dp)
+                                    MaterialTheme.shapes.extraSmall
                                 )
                                 .padding(horizontal = 8.dp, vertical = 2.dp),
                             maxLines = 1
@@ -499,14 +492,13 @@ fun FilesHeader(
                 )
                 Text(
                     text = currentDir.name,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
+                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier
                         .padding(horizontal = 4.dp)
                         .background(
                             MaterialTheme.colorScheme.primaryContainer,
-                            RoundedCornerShape(4.dp)
+                            MaterialTheme.shapes.extraSmall
                         )
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 )
@@ -543,7 +535,7 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
             .clickable { onBookClick(File(novelFileInfo.path)) }
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp)
-            .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer, MaterialTheme.shapes.small)
             .padding(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -554,7 +546,7 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
                 contentDescription = novelCover!!.text,
                 modifier = Modifier
                     .size(width = 72.dp, height = 100.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(MaterialTheme.shapes.small)
             )
         } ?: novelCover?.vector?.let { id ->
             Image(
@@ -562,13 +554,13 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
                 contentDescription = novelCover!!.text,
                 modifier = Modifier
                     .size(width = 72.dp, height = 100.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(MaterialTheme.shapes.small)
             )
         } ?: run {
             Box(
                 modifier = Modifier
                     .size(width = 72.dp, height = 100.dp)
-                    .clip(RoundedCornerShape(4.dp))
+                    .clip(MaterialTheme.shapes.extraSmall)
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
@@ -587,15 +579,14 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
         ) {
             Text(
                 text = novelFileInfo.title.truncateMiddle(75),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleSmall,
                 maxLines = 3,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
             Text(
                 text = novelFileInfo.author,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 maxLines = 1,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 modifier = Modifier.padding(top = 4.dp)
@@ -607,15 +598,14 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
             ) {
                 Text(
                     text = fileInfoText,
-                    fontSize = 10.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
 
                 if (progressText.isNotEmpty()) {
                     Text(
                         text = progressText,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(start = 8.dp)
                     )
@@ -681,7 +671,7 @@ fun NovelFileGridItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
             .fillMaxWidth()
             .aspectRatio(0.7f) // Book cover aspect ratio (width:height = 7:10)
             .padding(4.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(MaterialTheme.shapes.small)
             .clickable { onBookClick(File(novelFileInfo.path)) }
     ) {
         // Cover image with placeholder (fills entire box)
@@ -738,8 +728,7 @@ fun NovelFileGridItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
             // Title
             Text(
                 text = novelFileInfo.title.truncateMiddle(30),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleSmall,
                 maxLines = 2,
                 color = androidx.compose.ui.graphics.Color.White
             )
@@ -754,15 +743,14 @@ fun NovelFileGridItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
             ) {
                 Text(
                     text = fileInfoText,
-                    fontSize = 10.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.8f)
                 )
 
                 if (progressText.isNotEmpty()) {
                     Text(
                         text = progressText,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }

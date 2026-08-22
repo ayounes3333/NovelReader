@@ -37,6 +37,7 @@ import my.noveldokusha.core.rememberResolvedBookImagePath
 import my.noveldokusha.scraper.domain.BookResult
 import my.noveldokusha.scraper.fixtures.fixturesCatalogList
 import my.noveldokusha.feature.local_database.BookMetadata
+import my.noveldoksuha.coreui.theme.AppSpacing
 
 @Composable
 internal fun GlobalSourceSearchScreenBody(
@@ -47,7 +48,7 @@ internal fun GlobalSourceSearchScreenBody(
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.padding(contentPadding),
-        contentPadding = PaddingValues(top = 8.dp, bottom = 240.dp)
+        contentPadding = PaddingValues(top = AppSpacing.small, bottom = AppSpacing.scrollableContentBottomPadding)
     ) {
         items(listSources) { entry ->
             Text(

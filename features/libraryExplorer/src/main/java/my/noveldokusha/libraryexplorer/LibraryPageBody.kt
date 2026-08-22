@@ -30,13 +30,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import my.noveldoksuha.coreui.components.AppBadge
 import my.noveldoksuha.coreui.components.BookImageButtonView
 import my.noveldoksuha.coreui.modifiers.bounceOnPressed
-import my.noveldoksuha.coreui.theme.ColorAccent
-import my.noveldoksuha.coreui.theme.ImageBorderShape
 import my.noveldokusha.core.isLocalUri
 import my.noveldokusha.core.rememberResolvedBookImagePath
 import my.noveldokusha.feature.local_database.BookWithContext
+import my.noveldoksuha.coreui.theme.AppSpacing
 
 @Composable
 internal fun LibraryPageBody(
@@ -48,7 +48,7 @@ internal fun LibraryPageBody(
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(160.dp),
-        contentPadding = PaddingValues(top = 4.dp, bottom = 400.dp, start = 4.dp, end = 4.dp)
+        contentPadding = AppSpacing.listContentPadding
     ) {
         items(
             items = list,
@@ -81,35 +81,18 @@ internal fun LibraryPageBody(
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
-                    Text(
-                        text = notReadCount.toString(),
-                        color = Color.White,
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .background(ColorAccent, ImageBorderShape)
-                            .padding(4.dp)
-                    )
+                    AppBadge(text = notReadCount.toString())
                 }
                 // Group count badge (only shown when group contains multiple books)
                 if (group.books.size > 1) {
-                    Text(
+                    AppBadge(
                         text = group.books.size.toString(),
-                        color = Color.White,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(8.dp)
-                            .background(MaterialTheme.colorScheme.secondary, ImageBorderShape)
-                            .padding(4.dp)
+                        modifier = Modifier.align(Alignment.BottomEnd)
                     )
                 }
-                if (book.book.url.isLocalUri) Text(
+                if (book.book.url.isLocalUri) AppBadge(
                     text = stringResource(R.string.local),
-                    color = Color.White,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp)
-                        .background(ColorAccent, ImageBorderShape)
-                        .padding(4.dp)
+                    modifier = Modifier.align(Alignment.TopEnd)
                 )
             }
         }

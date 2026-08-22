@@ -3,15 +3,14 @@ package my.noveldokusha.settings
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import com.aliyounes.aurui.components.AurToolbar
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -30,12 +29,17 @@ fun SettingsScreen() {
     val databaseResults by scraperTestingViewModel.databaseResults.collectAsState()
     val isTestingInProgress by scraperTestingViewModel.isTestingInProgress.collectAsState()
 
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             Column {
-                AurToolbar(
-                    title = stringResource(id = R.string.title_settings)
+                TopAppBar(
+                    scrollBehavior = scrollBehavior,
+                    title = { Text(text = stringResource(id = R.string.title_settings)) },
                 )
+                CollapsibleDivider(scrollBehavior.state)
             }
         },
         content = { innerPadding ->

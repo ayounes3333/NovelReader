@@ -41,7 +41,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import my.noveldoksuha.coreui.composableActions.debouncedAction
 import my.noveldoksuha.coreui.theme.ColorAccent
+import my.noveldoksuha.coreui.theme.ColorAccentContent
 import my.noveldokusha.features.reader.features.TextToSpeechSettingData
+import my.noveldoksuha.coreui.theme.AppElevation
 
 
 @Composable
@@ -68,7 +70,7 @@ fun VoiceReaderDialog(
             }
         }
         ElevatedCard(
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 12.dp)
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = AppElevation.dialog)
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -96,7 +98,7 @@ fun VoiceReaderDialog(
                             modifier = Modifier
                                 .size(36.dp)
                                 .background(ColorAccent, CircleShape),
-                            tint = Color.White,
+                            tint = ColorAccentContent,
                         )
                     }
                     IconButton(
@@ -110,7 +112,7 @@ fun VoiceReaderDialog(
                             modifier = Modifier
                                 .size(32.dp)
                                 .background(ColorAccent, CircleShape),
-                            tint = Color.White,
+                            tint = ColorAccentContent,
                         )
                     }
                     IconButton(
@@ -121,7 +123,7 @@ fun VoiceReaderDialog(
                         Icon(
                             imageVector = Icons.Rounded.NavigateBefore,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = ColorAccentContent,
                             modifier = Modifier
                                 .size(38.dp)
                                 .background(ColorAccent, CircleShape),
@@ -138,13 +140,13 @@ fun VoiceReaderDialog(
                                 true -> Icon(
                                     Icons.Rounded.Pause,
                                     contentDescription = null,
-                                    tint = Color.White,
+                                    tint = ColorAccentContent,
                                 )
 
                                 false -> Icon(
                                     Icons.Rounded.PlayArrow,
                                     contentDescription = null,
-                                    tint = Color.White,
+                                    tint = ColorAccentContent,
                                 )
                             }
                         }
@@ -157,7 +159,7 @@ fun VoiceReaderDialog(
                         Icon(
                             Icons.Rounded.NavigateNext,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = ColorAccentContent,
                             modifier = Modifier
                                 .size(38.dp)
                                 .background(ColorAccent, CircleShape),
@@ -171,7 +173,7 @@ fun VoiceReaderDialog(
                         Icon(
                             Icons.Rounded.FastForward,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = ColorAccentContent,
                             modifier = Modifier
                                 .size(32.dp)
                                 .background(ColorAccent, CircleShape),
@@ -189,7 +191,7 @@ fun VoiceReaderDialog(
                             modifier = Modifier
                                 .size(36.dp)
                                 .background(ColorAccent, CircleShape),
-                            tint = Color.White,
+                            tint = ColorAccentContent,
                         )
                     }
                 }

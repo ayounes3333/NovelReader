@@ -35,7 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.aliyounes.aurui.components.AurTextField
+import my.noveldoksuha.coreui.components.AppSearchTextField
 import my.noveldoksuha.coreui.components.BookSettingsDialog
 import my.noveldoksuha.coreui.components.BookSettingsDialogState
 import my.noveldoksuha.coreui.theme.ColorNotice
@@ -114,16 +114,12 @@ fun LibraryScreen(
                     enter = expandVertically() + fadeIn(),
                     exit = shrinkVertically() + fadeOut()
                 ) {
-                    AurTextField(
+                    AppSearchTextField(
                         value = libraryModel.searchQuery,
                         onValueChange = { libraryModel.searchQuery = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
                         placeholder = stringResource(R.string.search_by_title),
                         leadingIcon = Icons.Filled.Search,
                         trailingIcon = if (libraryModel.searchQuery.isNotEmpty()) Icons.Outlined.Close else null,
-                        singleLine = true,
                     )
                 }
             }

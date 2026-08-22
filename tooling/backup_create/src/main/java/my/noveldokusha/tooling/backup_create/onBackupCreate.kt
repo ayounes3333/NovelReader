@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,8 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.aliyounes.aurui.components.AurButton
-import com.aliyounes.aurui.components.AurButtonType
+import my.noveldoksuha.coreui.theme.AppSpacing
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -82,8 +82,7 @@ fun onBackupCreate(): () -> Unit {
                                 .weight(1f)
                         )
                     }
-                    AurButton(
-                        text = stringResource(id = R.string.backup),
+                    FilledTonalButton(
                         onClick = {
                             showDialog = false
                             val pattern = "yyyy-MM-dd_HH-mm"
@@ -91,9 +90,12 @@ fun onBackupCreate(): () -> Unit {
                             val fileName = "noveldokusha_backup_$date.zip"
                             fileExplorer.launch(fileName)
                         },
-                        type = AurButtonType.Primary,
-                        fullWidth = true
-                    )
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(AppSpacing.large)
+                    ) {
+                        Text(text = stringResource(id = R.string.backup))
+                    }
                 }
             }
         }

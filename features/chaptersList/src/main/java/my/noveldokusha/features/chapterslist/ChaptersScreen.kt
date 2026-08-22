@@ -68,7 +68,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.aliyounes.aurui.components.AurTextField
+import my.noveldoksuha.coreui.components.AppSearchTextField
 import kotlinx.coroutines.launch
 import my.nanihadesuka.compose.InternalLazyColumnScrollbar
 import my.noveldoksuha.coreui.theme.ColorAccent
@@ -241,12 +241,9 @@ internal fun ChaptersScreen(
                         enter = expandVertically() + fadeIn(),
                         exit = shrinkVertically() + fadeOut()
                     ) {
-                        AurTextField(
+                        AppSearchTextField(
                             value = state.searchQuery.value,
                             onValueChange = { state.searchQuery.value = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
                             placeholder = stringResource(R.string.search_chapters),
                             leadingIcon = Icons.Filled.Search,
                             trailingIcon =
@@ -256,7 +253,6 @@ internal fun ChaptersScreen(
                                     null
                                 }
                             ,
-                            singleLine = true,
                         )
                     }
                 }
