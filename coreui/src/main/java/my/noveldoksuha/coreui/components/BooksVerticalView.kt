@@ -32,6 +32,7 @@ import my.noveldokusha.core.domain.CloudfareVerificationBypassFailedException
 import my.noveldokusha.core.domain.WebViewCookieManagerInitializationFailedException
 import my.noveldokusha.core.rememberResolvedBookImagePath
 import my.noveldokusha.feature.local_database.BookMetadata
+import my.noveldoksuha.coreui.theme.AppSpacing
 
 @Composable
 fun BooksVerticalView(
@@ -71,7 +72,7 @@ fun BooksVerticalView(
         modifier = Modifier
             .fillMaxWidth()
             .padding(innerPadding),
-        contentPadding = PaddingValues(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 260.dp)
+        contentPadding = AppSpacing.listContentPadding
     ) {
         items(list) {
             val interactionSource = remember { MutableInteractionSource() }

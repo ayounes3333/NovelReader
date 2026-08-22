@@ -6,6 +6,10 @@ import androidx.compose.ui.graphics.Color
 
 // Brand accent — Material You Indigo/Violet
 val ColorAccent = Color(0xFF6650A4)
+
+/** Content color for text/icons placed on top of [ColorAccent]. */
+val ColorAccentContent = Color.White
+
 val ColorLike = Color(0xFFE53935)
 val ColorNotice = Color(0xFFE48800)
 
