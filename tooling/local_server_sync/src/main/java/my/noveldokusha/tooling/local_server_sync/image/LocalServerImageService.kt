@@ -25,7 +25,8 @@ import javax.inject.Singleton
 @Singleton
 class LocalServerImageService @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val appFileResolver: AppFileResolver
+    private val appFileResolver: AppFileResolver,
+    private val imageIndexCache: ImageIndexCache
 ) {
     companion object {
         private val SUPPORTED_EXTENSIONS = setOf("jpg", "jpeg", "png", "gif", "webp", "bmp")
@@ -69,12 +70,13 @@ class LocalServerImageService @Inject constructor(
             out
         }
 
-    private fun scanInto(
+    private suspend fun scanInto(
         directory: File,
         bookUrl: String,
         relativePath: String,
         out: MutableList<ImageManifestEntry>
     ) {
+        val entriesToCache = mutableListOf<Pair<String, ImageCacheEntry>>()
         directory.listFiles()?.forEach { file ->
             when {
                 file.isDirectory -> {
@@ -87,7 +89,25 @@ class LocalServerImageService @Inject constructor(
                         return@forEach
                     }
                     val rel = if (relativePath.isEmpty()) file.name else "$relativePath/${file.name}"
-                    val sha = sha256HexStreaming(file) ?: return@forEach
+
+                    val cached = imageIndexCache.get(bookUrl, rel)
+                    val sha = if (cached != null && imageIndexCache.isValid(file, cached)) {
+                        cached.sha256
+                    } else {
+                        val computed = sha256HexStreaming(file) ?: run {
+                            Timber.w("SHA-256 compute failed for: ${file.absolutePath}")
+                            return@forEach
+                        }
+                        entriesToCache.add(
+                            rel to ImageCacheEntry(
+                                sha256 = computed,
+                                size = file.length(),
+                                lastModified = file.lastModified()
+                            )
+                        )
+                        computed
+                    }
+
                     out += ImageManifestEntry(
                         bookUrl = bookUrl,
                         relativePath = rel,
@@ -100,6 +120,9 @@ class LocalServerImageService @Inject constructor(
                     )
                 }
             }
+        }
+        if (entriesToCache.isNotEmpty()) {
+            imageIndexCache.putAll(bookUrl, entriesToCache)
         }
     }
 

@@ -216,6 +216,31 @@ data class ChapterBodyManifestResponse(
     val nextCursor: Long = 0L
 )
 
+// ─── Chapter body batch SHA-256 check ─────────────────────────────────────
+
+@SuppressLint("UnsafeOptInUsageError")
+@Serializable
+data class ChapterBodyCheckEntry(
+    val chapterUrl: String,
+    val sha256: String
+)
+
+@SuppressLint("UnsafeOptInUsageError")
+@Serializable
+data class ChapterBodyCheckRequest(
+    val entries: List<ChapterBodyCheckEntry> = emptyList()
+)
+
+@SuppressLint("UnsafeOptInUsageError")
+@Serializable
+data class ChapterBodyCheckResponse(
+    val success: Boolean = true,
+    val message: String = "",
+    val missingUrls: List<String> = emptyList(),
+    val existingCount: Int = 0,
+    val missingCount: Int = 0
+)
+
 // ─── Misc generic responses ────────────────────────────────────────────────
 
 @SuppressLint("UnsafeOptInUsageError")

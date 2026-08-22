@@ -2,6 +2,9 @@ package my.noveldokusha.tooling.local_server_sync.repository
 
 import my.noveldokusha.tooling.local_server_sync.api.LocalServerApiService
 import my.noveldokusha.tooling.local_server_sync.data.BookChapterEntry
+import my.noveldokusha.tooling.local_server_sync.data.ChapterBodyCheckEntry
+import my.noveldokusha.tooling.local_server_sync.data.ChapterBodyCheckRequest
+import my.noveldokusha.tooling.local_server_sync.data.ChapterBodyCheckResponse
 import my.noveldokusha.tooling.local_server_sync.data.ChapterBodyManifestResponse
 import my.noveldokusha.tooling.local_server_sync.data.ChapterChangesRequest
 import my.noveldokusha.tooling.local_server_sync.data.ChapterPullResponse
@@ -52,6 +55,11 @@ class LocalServerSyncRepository @Inject constructor(
 
     suspend fun pullChapters(since: Long, limit: Int = 1000): Result<ChapterPullResponse> =
         runCatching { apiService.pullChapterChanges(since, limit) }
+
+    // ── Chapter body batch SHA-256 check ─────────────────────────────────
+
+    suspend fun checkChapterBodies(entries: List<ChapterBodyCheckEntry>): Result<ChapterBodyCheckResponse> =
+        runCatching { apiService.checkChapterBodies(ChapterBodyCheckRequest(entries)) }
 
     // ── Chapter bodies ──────────────────────────────────────────────────
 

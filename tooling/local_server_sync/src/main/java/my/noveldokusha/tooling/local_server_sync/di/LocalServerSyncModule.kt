@@ -14,6 +14,7 @@ import my.noveldokusha.tooling.local_server_sync.repository.LocalLibraryReposito
 import my.noveldokusha.tooling.local_server_sync.repository.LocalServerSyncRepository
 import my.noveldokusha.tooling.local_server_sync.storage.AuthTokenStorage
 import my.noveldokusha.tooling.local_server_sync.manager.LocalServerSyncManager
+import my.noveldokusha.tooling.local_server_sync.image.ImageIndexCache
 import my.noveldokusha.tooling.local_server_sync.image.LocalServerImageService
 import my.noveldokusha.tooling.local_server_sync.sync.WiFiSyncScheduler
 import my.noveldokusha.feature.local_database.AppDatabase
@@ -75,8 +76,9 @@ object LocalServerSyncModule {
     @Singleton
     fun provideLocalServerImageService(
         @ApplicationContext context: Context,
-        appFileResolver: AppFileResolver
-    ): LocalServerImageService = LocalServerImageService(context, appFileResolver)
+        appFileResolver: AppFileResolver,
+        imageIndexCache: ImageIndexCache
+    ): LocalServerImageService = LocalServerImageService(context, appFileResolver, imageIndexCache)
 
     @Provides
     @Singleton

@@ -6,6 +6,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import my.noveldokusha.tooling.local_server_sync.data.AuthResponse
+import my.noveldokusha.tooling.local_server_sync.data.ChapterBodyCheckRequest
+import my.noveldokusha.tooling.local_server_sync.data.ChapterBodyCheckResponse
 import my.noveldokusha.tooling.local_server_sync.data.ChapterBodyManifestResponse
 import my.noveldokusha.tooling.local_server_sync.data.ChapterChangesRequest
 import my.noveldokusha.tooling.local_server_sync.data.ChapterChangesResponse
@@ -171,6 +173,16 @@ class LocalServerApiService @Inject constructor(
             method = "GET",
             body = null,
             deserialize = { json.decodeFromString(ChapterPullResponse.serializer(), it) }
+        )
+
+    // ── Public: chapter body batch SHA-256 check ─────────────────────────
+
+    suspend fun checkChapterBodies(req: ChapterBodyCheckRequest): ChapterBodyCheckResponse =
+        sendAuthenticatedJson(
+            path = "/api/sync/chapter-bodies/check",
+            method = "POST",
+            body = json.encodeToString(ChapterBodyCheckRequest.serializer(), req),
+            deserialize = { json.decodeFromString(ChapterBodyCheckResponse.serializer(), it) }
         )
 
     // ── Public: chapter bodies (gzip) ────────────────────────────────────
