@@ -18,8 +18,14 @@ interface LibraryDao {
     @Query("SELECT * FROM Book LIMIT :limit OFFSET :offset")
     suspend fun getBatch(offset: Int, limit: Int): List<Book>
 
+    @Query("SELECT * FROM Book WHERE inLibrary == 1 ORDER BY url LIMIT :limit OFFSET :offset")
+    suspend fun getAllInLibraryBatchOrdered(offset: Int, limit: Int): List<Book>
+
     @Query("SELECT * FROM Book WHERE inLibrary == 1")
     suspend fun getAllInLibrary(): List<Book>
+
+    @Query("SELECT COUNT(*) FROM Book WHERE inLibrary == 1")
+    suspend fun getAllInLibraryCount(): Int
 
     @Query("SELECT * FROM Book WHERE inLibrary == 1")
     fun booksInLibraryFlow(): Flow<List<Book>>

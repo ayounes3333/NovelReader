@@ -174,6 +174,8 @@ class AppPreferences @Inject constructor(
         ) { enumValueOf(it) }
     }
 
+    fun getSharedPreferences(): SharedPreferences = preferences
+
     abstract inner class Preference<T>(val name: String) {
         abstract var value: T
         fun flow() = toFlow(name) { value }.flowOn(Dispatchers.IO)

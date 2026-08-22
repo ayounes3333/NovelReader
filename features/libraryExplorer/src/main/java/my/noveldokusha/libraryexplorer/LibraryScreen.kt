@@ -45,7 +45,8 @@ import my.noveldokusha.feature.local_database.BookMetadata
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
-    navigationRouteViewModel: NavigationRouteViewModel = viewModel()
+    navigationRouteViewModel: NavigationRouteViewModel = viewModel(),
+    onNavigateToSettings: () -> Unit = {}
 ) {
     val libraryModel: LibraryViewModel = viewModel()
 
@@ -140,7 +141,8 @@ fun LibraryScreen(
                 },
                 onBookLongClick = {
                     libraryModel.bookSettingsDialogState = BookSettingsDialogState.Show(it.book)
-                }
+                },
+                onQuickSetupClick = onNavigateToSettings
             )
         }
     )

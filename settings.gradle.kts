@@ -41,6 +41,7 @@ include(":tooling:backup_create")
 include(":tooling:epub_importer")
 include(":tooling:firebase_sync")
 include(":tooling:local_server_sync")
+include(":tooling:quick_setup")
 
 include(":features:reader")
 include(":features:chaptersList")

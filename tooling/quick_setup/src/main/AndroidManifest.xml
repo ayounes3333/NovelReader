@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- NSD (Network Service Discovery) permissions -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+
+    <!-- Camera permission for QR code scanning -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <!-- USB AOA permissions -->
+    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
+    <uses-feature android:name="android.hardware.usb.accessory" android:required="false" />
+
+    <application>
+        <activity
+            android:name=".ui.QuickSetupActivity"
+            android:exported="false"
+            android:label="Quick Setup"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar"
+            />
+
+        <!-- USB connection activity, launched when accessory is attached -->
+        <activity
+            android:name=".ui.UsbQuickSetupActivity"
+            android:exported="true"
+            android:label="USB Quick Setup"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED"
+                android:resource="@xml/accessory_filter"
+                />
+        </activity>
+
+        <service
+            android:name=".server.QuickSetupServerService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"
+            />
+    </application>
+</manifest>

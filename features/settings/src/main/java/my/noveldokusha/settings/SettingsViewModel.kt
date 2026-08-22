@@ -41,7 +41,7 @@ val syncManagerOptional: Any? = try {
 internal class SettingsViewModel @Inject constructor(
     private val appRepository: AppRepository,
     private val appScope: AppCoroutineScope,
-    private val appPreferences: AppPreferences,
+    val appPreferences: AppPreferences,
     @ApplicationContext private val context: Context,
     private val translationManager: TranslationManager,
     stateHandle: SavedStateHandle,

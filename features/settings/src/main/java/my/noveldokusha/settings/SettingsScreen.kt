@@ -12,6 +12,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -19,6 +20,10 @@ import my.noveldoksuha.coreui.components.CollapsibleDivider
 import my.noveldokusha.settings.viewmodels.ScraperTestingViewModel
 import my.noveldokusha.tooling.backup_create.onBackupCreate
 import my.noveldokusha.tooling.backup_restore.onBackupRestore
+import my.noveldokusha.tooling.quick_setup.onQuickSetupSend
+import my.noveldokusha.tooling.quick_setup.onQuickSetupReceive
+import my.noveldokusha.tooling.quick_setup.ui.QuickSetupActivity
+import my.noveldokusha.tooling.quick_setup.ui.UsbQuickSetupActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,6 +35,23 @@ fun SettingsScreen() {
     val isTestingInProgress by scraperTestingViewModel.isTestingInProgress.collectAsState()
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
+    val quickSetupSend = onQuickSetupSend(appPreferences = viewModel.appPreferences)
+    val quickSetupReceive = onQuickSetupReceive()
+
+    val context = LocalContext.current
+    val quickSetupSendWifi = {
+        context.startActivity(QuickSetupActivity.sendIntent(context))
+    }
+    val quickSetupReceiveWifi = {
+        context.startActivity(QuickSetupActivity.receiveIntent(context))
+    }
+    val quickSetupSendUsb = {
+        UsbQuickSetupActivity.launch(context)
+    }
+    val quickSetupReceiveUsb = {
+        UsbQuickSetupActivity.launch(context)
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -62,6 +84,12 @@ fun SettingsScreen() {
                 onTestAllScrapers = scraperTestingViewModel::testAll,
                 onTestIndividualSource = scraperTestingViewModel::testIndividualSource,
                 onTestIndividualDatabase = scraperTestingViewModel::testIndividualDatabase,
+                onQuickSetupSend = quickSetupSend,
+                onQuickSetupReceive = quickSetupReceive,
+                onQuickSetupSendWifi = quickSetupSendWifi,
+                onQuickSetupReceiveWifi = quickSetupReceiveWifi,
+                onQuickSetupSendUsb = quickSetupSendUsb,
+                onQuickSetupReceiveUsb = quickSetupReceiveUsb,
                 modifier = Modifier.padding(innerPadding),
             )
         }

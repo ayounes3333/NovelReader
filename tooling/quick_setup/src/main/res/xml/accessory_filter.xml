@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Must match the identity strings the host sends during AOA negotiation
+         (AoaHostConnection: manufacturer/model/version) -->
+    <usb-accessory
+        manufacturer="NovelDokusha"
+        model="NovelReader"
+        version="1.0" />
+</resources>

@@ -80,7 +80,9 @@ open class MainActivity : BaseActivity() {
                     Box(Modifier.weight(1f)) {
                         AnimatedTransition(targetState = activePageIndex) {
                             when (it) {
-                                0 -> LibraryScreen()
+                                0 -> LibraryScreen(
+                                    onNavigateToSettings = { activePageIndex = 2 }
+                                )
                                 1 -> CatalogExplorerScreen()
                                 2 -> SettingsScreen()
                             }

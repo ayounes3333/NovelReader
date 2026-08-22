@@ -35,6 +35,7 @@ import my.noveldokusha.settings.sections.SettingsData
 import my.noveldokusha.settings.sections.SettingsTheme
 import my.noveldokusha.settings.sections.SettingsTranslationModels
 import my.noveldokusha.settings.sections.SyncSettingsSection
+import my.noveldokusha.tooling.quick_setup.QuickSetupSection
 
 @Composable
 internal fun SettingsScreenBody(
@@ -58,6 +59,12 @@ internal fun SettingsScreenBody(
     onTestAllScrapers: () -> Unit = {},
     onTestIndividualSource: (String) -> Unit = {},
     onTestIndividualDatabase: (String) -> Unit = {},
+    onQuickSetupSend: () -> Unit = {},
+    onQuickSetupReceive: () -> Unit = {},
+    onQuickSetupSendWifi: () -> Unit = {},
+    onQuickSetupReceiveWifi: () -> Unit = {},
+    onQuickSetupSendUsb: () -> Unit = {},
+    onQuickSetupReceiveUsb: () -> Unit = {},
 ) {
     Column(
         modifier = modifier.verticalScroll(rememberScrollState()),
@@ -79,6 +86,15 @@ internal fun SettingsScreenBody(
         SettingsBackup(
             onBackupData = onBackupData,
             onRestoreData = onRestoreData
+        )
+        HorizontalDivider()
+        QuickSetupSection(
+            onSendViaFile = onQuickSetupSend,
+            onSendViaWifi = onQuickSetupSendWifi,
+            onSendViaUsb = onQuickSetupSendUsb,
+            onReceiveViaFile = onQuickSetupReceive,
+            onReceiveViaWifi = onQuickSetupReceiveWifi,
+            onReceiveViaUsb = onQuickSetupReceiveUsb
         )
         HorizontalDivider()
         SyncSettingsSection()
@@ -168,6 +184,12 @@ private fun Preview() {
                 onTestAllScrapers = { },
                 onTestIndividualSource = { },
                 onTestIndividualDatabase = { },
+                onQuickSetupSend = { },
+                onQuickSetupReceive = { },
+                onQuickSetupSendWifi = { },
+                onQuickSetupReceiveWifi = { },
+                onQuickSetupSendUsb = { },
+                onQuickSetupReceiveUsb = { },
             )
         }
     }

@@ -78,6 +78,13 @@ readability4j = "1.0.8"
 retrofit = "2.9.0"
 
 timber = "5.0.1"
+nanohttpd = "2.3.1"
+
+# QR Code
+zxing-android-embedded = "4.3.0"
+camerax = "1.4.2"
+mlkit-barcode = "17.3.0"
+
 junitVersion = "1.2.1"
 jetbrainsKotlinJvm = "2.0.21"
 
@@ -194,6 +201,15 @@ material = { module = "com.google.android.material:material", version.ref = "and
 translate = { module = "com.google.mlkit:translate", version.ref = "translate" }
 
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
+nanohttpd = { module = "org.nanohttpd:nanohttpd", version.ref = "nanohttpd" }
+
+# QR Code
+zxing-android-embedded = { module = "com.journeyapps:zxing-android-embedded", version.ref = "zxing-android-embedded" }
+camerax-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
+mlkit-barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "mlkit-barcode" }
+
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 
 #build-confing deps

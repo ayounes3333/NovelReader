@@ -42,6 +42,7 @@ import my.noveldokusha.feature.local_database.BookWithContext
 import my.noveldokusha.features.localexplorer.view.BrowseScreen
 import my.noveldokusha.features.localexplorer.viewmodel.BrowseViewModel
 import my.noveldokusha.tooling.epub_importer.EpubImportService
+import my.noveldokusha.tooling.quick_setup.EmptyLibraryBanner
 
 @OptIn(
     ExperimentalFoundationApi::class,
@@ -55,6 +56,7 @@ internal fun LibraryScreenBody(
     topAppBarState: TopAppBarState,
     onBookClick: (BookWithContext) -> Unit,
     onBookLongClick: (BookWithContext) -> Unit,
+    onQuickSetupClick: () -> Unit = {},
     viewModel: LibraryPageViewModel = viewModel(),
     browseViewModel: BrowseViewModel = viewModel()
 ) {
@@ -106,6 +108,14 @@ internal fun LibraryScreenBody(
             .padding(innerPadding),
     ) {
         Column {
+            val isLibraryEmpty by remember {
+                derivedStateOf {
+                    filteredGroupedFavorites.isEmpty() && filteredGroupedRecent.isEmpty()
+                }
+            }
+            if (isLibraryEmpty) {
+                EmptyLibraryBanner(onClick = onQuickSetupClick)
+            }
             TabRow(
                 selectedTabIndex = pagerState.currentPage,
                 indicator = {

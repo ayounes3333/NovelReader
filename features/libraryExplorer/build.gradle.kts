@@ -18,6 +18,7 @@ dependencies {
     implementation(projects.tooling.localDatabase)
     implementation(projects.tooling.textTranslator.domain)
     implementation(projects.tooling.epubImporter)
+    implementation(projects.tooling.quickSetup)
 
     implementation(libs.androidx.workmanager)
 

@@ -11,8 +11,14 @@ interface ChapterBodyDao {
     @Query("SELECT * FROM ChapterBody")
     suspend fun getAll(): List<ChapterBody>
 
+    @Query("SELECT COUNT(*) FROM ChapterBody")
+    suspend fun getCountAll(): Int
+
     @Query("SELECT * FROM ChapterBody LIMIT :limit OFFSET :offset")
     suspend fun getBatch(offset: Int, limit: Int): List<ChapterBody>
+
+    @Query("SELECT * FROM ChapterBody ORDER BY url LIMIT :limit OFFSET :offset")
+    suspend fun getBatchOrdered(offset: Int, limit: Int): List<ChapterBody>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertReplace(chapterBody: ChapterBody)
