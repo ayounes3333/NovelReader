@@ -1,9 +1,11 @@
 package my.noveldoksuha.coreui.components
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.aliyounes.aurui.components.AurTextField
 import my.noveldoksuha.coreui.theme.InternalTheme
 
 @Composable
@@ -13,10 +15,12 @@ fun MyOutlinedTextField(
     placeHolderText: String,
     modifier: Modifier = Modifier
 ) {
-    AurTextField(
+    OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        placeholder = placeHolderText,
+        placeholder = { Text(text = placeHolderText) },
+        singleLine = true,
+        shape = MaterialTheme.shapes.medium,
         modifier = modifier
     )
 }

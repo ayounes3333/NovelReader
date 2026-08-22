@@ -11,8 +11,6 @@ import android.os.Bundle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.DrawableRes
-import androidx.annotation.StringRes
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,17 +28,13 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import com.aliyounes.aurui.ui.theme.AurUITheme
-import com.aliyounes.aurui.components.*
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import dagger.hilt.android.AndroidEntryPoint
 import my.noveldoksuha.coreui.BaseActivity
 import my.noveldoksuha.coreui.components.AnimatedTransition
 import my.noveldoksuha.coreui.theme.Theme
-import my.noveldokusha.R
 import my.noveldokusha.catalogexplorer.CatalogExplorerScreen
 import my.noveldokusha.features.localexplorer.FileManager
 import my.noveldokusha.features.localexplorer.extractor.utils.OpenFileReceiver
@@ -48,11 +42,12 @@ import my.noveldokusha.libraryexplorer.LibraryScreen
 import my.noveldokusha.settings.SettingsScreen
 import my.noveldokusha.tooling.epub_importer.EpubImportService
 
-// Convert pages to AurTabItem format
-private fun getTabItems(): List<AurTabItem> = listOf(
-    AurTabItem("Library", Icons.Default.Home),
-    AurTabItem("Finder", Icons.Default.MenuBook),
-    AurTabItem("Settings", Icons.Default.Settings)
+private data class MainTab(val label: String, val icon: ImageVector)
+
+private fun getTabItems(): List<MainTab> = listOf(
+    MainTab("Library", Icons.Default.Home),
+    MainTab("Finder", Icons.Default.MenuBook),
+    MainTab("Settings", Icons.Default.Settings)
 )
 
 
@@ -80,7 +75,7 @@ open class MainActivity : BaseActivity() {
                 activePageIndex = 0
             }
 
-            AurUITheme {
+            Theme(themeProvider = themeProvider) {
                 Column(Modifier.fillMaxSize()) {
                     Box(Modifier.weight(1f)) {
                         AnimatedTransition(targetState = activePageIndex) {
@@ -91,12 +86,16 @@ open class MainActivity : BaseActivity() {
                             }
                         }
                     }
-                    AurTabBar(
-                        selectedIndex = activePageIndex,
-                        onTabSelected = { activePageIndex = it },
-                        tabs = tabs,
-                        style = AurTabBarStyle.Pill
-                    )
+                    NavigationBar {
+                        tabs.forEachIndexed { index, tab ->
+                            NavigationBarItem(
+                                selected = activePageIndex == index,
+                                onClick = { activePageIndex = index },
+                                icon = { Icon(tab.icon, contentDescription = tab.label) },
+                                label = { Text(text = tab.label) },
+                            )
+                        }
+                    }
                 }
             }
         }

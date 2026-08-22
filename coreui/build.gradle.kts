@@ -12,8 +12,6 @@ android {
 }
 
 dependencies {
-    // AurUI library for modern UI components
-    api(libs.aurui)
     implementation(projects.strings)
     implementation(projects.core)
     implementation(projects.tooling.localDatabase)
