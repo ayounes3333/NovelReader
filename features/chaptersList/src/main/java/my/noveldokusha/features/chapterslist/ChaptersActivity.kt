@@ -72,6 +72,12 @@ class ChaptersActivity : BaseActivity() {
                     onSelectionModeChapterClick = viewModel::onSelectionModeChapterClick,
                     onSelectionModeChapterLongClick = viewModel::onSelectionModeChapterLongClick,
                     onChapterDownload = viewModel::onChapterDownload,
+                    onChapterAiTask = viewModel::onChapterAiTask,
+                    onRunBulkAiTask = viewModel::runBulkAiTask,
+                    onRetryFailedBulk = viewModel::retryFailedBulk,
+                    initiallyShowBulkAiSheet = intent.getBooleanExtra(
+                        NavigationRoutes.EXTRA_OPEN_AI_BULK_SHEET, false
+                    ),
                     onPullRefresh = viewModel::onPullRefresh,
                     onCoverLongClick = { searchBookInDatabase(input = viewModel.bookTitle) },
                     onChangeCover = onDoAskForImage { viewModel.saveImageAsCover(it) },

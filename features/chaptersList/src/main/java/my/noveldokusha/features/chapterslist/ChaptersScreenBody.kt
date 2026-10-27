@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import my.noveldoksuha.coreui.components.ErrorView
 import my.noveldokusha.chapterslist.R
 import my.noveldokusha.feature.local_database.ChapterWithContext
+import my.noveldokusha.tooling.ai_engine.domain.AiTask
 import my.noveldoksuha.coreui.theme.AppSpacing
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -38,6 +39,7 @@ internal fun ChaptersScreenBody(
     onChapterClick: (chapter: ChapterWithContext) -> Unit,
     onChapterLongClick: (chapter: ChapterWithContext) -> Unit,
     onChapterDownload: (chapter: ChapterWithContext) -> Unit,
+    onChapterAiTask: (chapter: ChapterWithContext, task: AiTask) -> Unit,
     onPullRefresh: () -> Unit,
     onCoverLongClick: () -> Unit,
     onGlobalSearchClick: (input: String) -> Unit,
@@ -90,9 +92,15 @@ internal fun ChaptersScreenBody(
                     chapterWithContext = it,
                     selected = state.selectedChaptersUrl.containsKey(it.chapter.url),
                     isLocalSource = state.isLocalSource.value,
+                    aiAvailable = state.aiAvailable.value,
+                    hasAiRevision = it.chapter.url in state.aiChaptersWithRevision,
+                    aiRunning = state.aiRunningChapterUrl.value == it.chapter.url,
+                    aiTranslateTarget = state.aiTranslateTarget.value,
+                    customPrompts = state.aiCustomPrompts.toList(),
                     onClick = { onChapterClick(it) },
                     onLongClick = { onChapterLongClick(it) },
-                    onDownload = { onChapterDownload(it) }
+                    onDownload = { onChapterDownload(it) },
+                    onAiTask = { task -> onChapterAiTask(it, task) }
                 )
             }
 

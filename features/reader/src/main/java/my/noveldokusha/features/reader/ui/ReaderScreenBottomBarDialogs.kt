@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import my.noveldoksuha.coreui.theme.Themes
+import my.noveldokusha.features.reader.ui.settingDialogs.AiSettingDialog
 import my.noveldokusha.features.reader.ui.settingDialogs.MoreSettingDialog
 import my.noveldokusha.features.reader.ui.settingDialogs.StyleSettingDialog
 import my.noveldokusha.features.reader.ui.settingDialogs.TranslatorSettingDialog
@@ -18,6 +20,7 @@ import my.noveldokusha.features.reader.ui.settingDialogs.VoiceReaderSettingDialo
 @Composable
 internal fun ReaderScreenBottomBarDialogs(
     settings: ReaderScreenState.Settings,
+    aiCallbacks: ReaderViewModelAiCallbacks,
     onTextFontChanged: (String) -> Unit,
     onTextSizeChanged: (Float) -> Unit,
     onSelectableTextChange: (Boolean) -> Unit,
@@ -27,6 +30,11 @@ internal fun ReaderScreenBottomBarDialogs(
     onFullScreen: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    LaunchedEffect(settings.selectedSetting.value) {
+        if (settings.selectedSetting.value == ReaderScreenState.Settings.Type.Ai) {
+            aiCallbacks.onRefreshAiState()
+        }
+    }
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = modifier.fillMaxWidth()
@@ -56,6 +64,10 @@ internal fun ReaderScreenBottomBarDialogs(
                         onKeepScreenOn = onKeepScreenOn,
                         fullScreen = settings.fullScreen.value,
                         onFullScreen = onFullScreen,
+                    )
+                    ReaderScreenState.Settings.Type.Ai -> AiSettingDialog(
+                        state = settings.ai,
+                        callbacks = aiCallbacks,
                     )
                     ReaderScreenState.Settings.Type.None -> Unit
                 }

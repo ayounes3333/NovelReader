@@ -13,6 +13,7 @@ dependencies {
     implementation(projects.scraper)
     implementation(projects.tooling.localDatabase)
     implementation(projects.tooling.epubParser)
+    implementation(projects.tooling.aiEngine)
 
     implementation(libs.jsoup)
     implementation(libs.readability4j)

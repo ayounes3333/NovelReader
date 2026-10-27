@@ -20,6 +20,12 @@ internal data class ChaptersScreenState(
     val isLocalSource: State<Boolean>,
     val isRefreshable: State<Boolean>,
     val searchQuery: MutableState<String>,
+    val aiAvailable: MutableState<Boolean>,
+    val aiTranslateTarget: MutableState<String>,
+    val aiChaptersWithRevision: SnapshotStateList<String>,
+    val aiRunningChapterUrl: MutableState<String?>,
+    val aiBulkLatestJob: MutableState<AiBulkSheetJobState?>,
+    val aiCustomPrompts: SnapshotStateList<Pair<Long, String>>,
 ) {
 
     val isInSelectionMode = derivedStateOf { selectedChaptersUrl.size != 0 }

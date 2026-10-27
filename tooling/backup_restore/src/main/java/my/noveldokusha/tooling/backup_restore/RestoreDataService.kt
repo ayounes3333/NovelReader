@@ -18,8 +18,10 @@ import my.noveldoksuha.coreui.states.NotificationsCenter
 import my.noveldoksuha.coreui.states.removeProgressBar
 import my.noveldoksuha.coreui.states.text
 import my.noveldoksuha.coreui.states.title
+import my.noveldoksuha.data.AiPromptsDaoRepository
 import my.noveldoksuha.data.AppRepository
 import my.noveldoksuha.data.BookChaptersRepository
+import my.noveldoksuha.data.ChapterAiRevisionRepository
 import my.noveldoksuha.data.ChapterBodyRepository
 import my.noveldoksuha.data.DownloaderRepository
 import my.noveldoksuha.data.LibraryBooksRepository
@@ -178,7 +180,7 @@ class RestoreDataService : Service() {
 
             // Check database version before attempting to restore
             val backupVersion = getDatabaseVersion(tempFile)
-            val currentVersion = 9 // Current database version
+            val currentVersion = 10 // Current database version
 
             notificationsCenter.modifyNotification(
                 notificationBuilder,
@@ -211,7 +213,13 @@ class RestoreDataService : Service() {
             }
 
             // Process data in batches
-            processInBatches(backupDatabase.libraryBooks, backupDatabase.bookChapters, backupDatabase.chapterBody)
+            processInBatches(
+                libraryBooks = backupDatabase.libraryBooks,
+                bookChapters = backupDatabase.bookChapters,
+                chapterBody = backupDatabase.chapterBody,
+                aiRevisions = backupDatabase.chapterAiRevisions,
+                aiPrompts = backupDatabase.aiPrompts
+            )
 
             backupDatabase.close()
         } catch (e: Exception) {
@@ -244,7 +252,7 @@ class RestoreDataService : Service() {
             val testDb = AppDatabase.createRoomFromFile(context, "version_check_temp", dbFile)
             testDb.closeDatabase()
             AppDatabase.deleteDatabaseFiles(context, "version_check_temp")
-            9 // If successful, it's already at current version
+            10 // If successful, it's already at current version
         } catch (e: Exception) {
             Timber.w(e, "Could not determine database version, assuming older version")
             1 // Assume it's an older version that needs migration
@@ -254,7 +262,9 @@ class RestoreDataService : Service() {
     private suspend fun processInBatches(
         libraryBooks: LibraryBooksRepository,
         bookChapters: BookChaptersRepository,
-        chapterBody: ChapterBodyRepository
+        chapterBody: ChapterBodyRepository,
+        aiRevisions: ChapterAiRevisionRepository,
+        aiPrompts: AiPromptsDaoRepository
     ) {
         // Process library books in batches
         val booksBatchSize = 100
@@ -291,6 +301,28 @@ class RestoreDataService : Service() {
             appRepository.chapterBody.insertReplace(bodiesBatch)
             bodiesOffset += bodiesBatchSize
         } while (bodiesBatch.size == bodiesBatchSize)
+
+        // Process AI chapter revisions in batches
+        val aiRevisionsBatchSize = 200
+        var aiRevisionsOffset = 0
+        do {
+            val revisionsBatch = withContext(Dispatchers.IO) {
+                aiRevisions.getBatch(aiRevisionsOffset, aiRevisionsBatchSize)
+            }
+            appRepository.chapterAiRevisions.insertReplace(revisionsBatch)
+            aiRevisionsOffset += aiRevisionsBatchSize
+        } while (revisionsBatch.size == aiRevisionsBatchSize)
+
+        // Process AI prompt templates in batches
+        val aiPromptsBatchSize = 200
+        var aiPromptsOffset = 0
+        do {
+            val promptsBatch = withContext(Dispatchers.IO) {
+                aiPrompts.getBatch(aiPromptsOffset, aiPromptsBatchSize)
+            }
+            appRepository.aiPrompts.insertReplace(promptsBatch)
+            aiPromptsOffset += aiPromptsBatchSize
+        } while (promptsBatch.size == aiPromptsBatchSize)
     }
 
     private fun processBookEntry(zipStream: ZipInputStream, entry: ZipEntry) {
@@ -347,6 +379,14 @@ class RestoreDataService : Service() {
             context = context,
             appFileResolver = appFileResolver,
             appCoroutineScope = appCoroutineScope
+        )
+
+        val chapterAiRevisions = ChapterAiRevisionRepository(
+            dao = newDatabase.chapterAiRevisionDao()
+        )
+
+        val aiPrompts = AiPromptsDaoRepository(
+            dao = newDatabase.aiPromptDao()
         )
 
         fun close() {

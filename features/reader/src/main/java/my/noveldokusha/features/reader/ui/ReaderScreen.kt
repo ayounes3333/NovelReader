@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.RecordVoiceOver
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.ColorLens
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Translate
@@ -58,6 +59,7 @@ import my.noveldoksuha.coreui.theme.Themes
 import my.noveldoksuha.coreui.theme.colorApp
 import my.noveldoksuha.coreui.theme.rememberMutableStateOf
 import my.noveldokusha.features.reader.domain.ReaderItem
+import my.noveldokusha.features.reader.features.AiSettingData
 import my.noveldokusha.features.reader.features.LiveTranslationSettingData
 import my.noveldokusha.features.reader.features.TextSynthesis
 import my.noveldokusha.features.reader.features.TextToSpeechSettingData
@@ -67,11 +69,13 @@ import my.noveldokusha.reader.R
 import my.noveldokusha.text_to_speech.Utterance
 import my.noveldokusha.text_to_speech.VoiceData
 import my.noveldokusha.text_translator.domain.TranslationModelState
+import my.noveldokusha.tooling.ai_engine.domain.AiTask
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ReaderScreen(
     state: ReaderScreenState,
+    aiCallbacks: ReaderViewModelAiCallbacks,
     onSelectableTextChange: (Boolean) -> Unit,
     onKeepScreenOn: (Boolean) -> Unit,
     onFollowSystem: (Boolean) -> Unit,
@@ -140,6 +144,12 @@ internal fun ReaderScreen(
                                     icon = Icons.Outlined.Translate,
                                     onClick = toggleOrSet,
                                 )
+                                if (state.settings.ai.isAvailable.value) ActionIconItem(
+                                    settingType = Type.Ai,
+                                    textId = R.string.ai_tools,
+                                    icon = Icons.Outlined.AutoAwesome,
+                                    onClick = toggleOrSet,
+                                )
                                 ActionIconItem(
                                     settingType = Type.TextToSpeech,
                                     textId = R.string.voice_reader,
@@ -194,6 +204,7 @@ internal fun ReaderScreen(
                 Column {
                     ReaderScreenBottomBarDialogs(
                         settings = state.settings,
+                        aiCallbacks = aiCallbacks,
                         onTextFontChanged = onTextFontChanged,
                         onTextSizeChanged = onTextSizeChanged,
                         onSelectableTextChange = onSelectableTextChange,
@@ -320,6 +331,24 @@ private fun ViewsPreview(
         textSize = remember { mutableFloatStateOf(20f) },
     )
 
+    val aiSettingData = AiSettingData(
+        isAvailable = remember { mutableStateOf(true) },
+        useAiRevision = remember { mutableStateOf(false) },
+        summaryMode = remember { mutableStateOf(false) },
+        hasActiveRevision = remember { mutableStateOf(false) },
+        isRunning = remember { mutableStateOf(false) },
+        runningTaskLabel = remember { mutableStateOf(null) },
+        lastResultMessage = remember { mutableStateOf(null) },
+        lastResultSuccess = remember { mutableStateOf(null) },
+        summary = remember { mutableStateOf(null) },
+        translateTarget = remember { mutableStateOf("en") },
+        customPrompts = remember { mutableStateListOf() },
+        activeTitle = remember { mutableStateOf(null) },
+        onUseRevisionChange = {},
+        onSummaryModeChange = {},
+        onApplyTitle = {},
+    )
+
     InternalTheme {
         Surface(color = Color.Black) {
             ReaderScreen(
@@ -337,12 +366,18 @@ private fun ViewsPreview(
                         keepScreenOn = remember { mutableStateOf(false) },
                         textToSpeech = textToSpeechSettingData,
                         liveTranslation = liveTranslationSettingData,
+                        ai = aiSettingData,
                         style = style,
                         selectedSetting = remember { mutableStateOf(data.selectedSetting) },
                         fullScreen = remember { mutableStateOf(false) },
                     ),
                     showInvalidChapterDialog = remember { mutableStateOf(false) }
                 ),
+                aiCallbacks = object : ReaderViewModelAiCallbacks {
+                    override fun onRunAiTask(task: AiTask) {}
+                    override fun onRefreshAiState() {}
+                    override fun onApplyAiTitle() {}
+                },
                 onTextSizeChanged = {},
                 onTextFontChanged = {},
                 onSelectableTextChange = {},
@@ -370,6 +405,7 @@ private class PreviewDataProvider : PreviewParameterProvider<PreviewDataProvider
         Data(selectedSetting = Type.TextToSpeech),
         Data(selectedSetting = Type.Style),
         Data(selectedSetting = Type.More),
+        Data(selectedSetting = Type.Ai),
     )
 }
 

@@ -143,6 +143,36 @@ class AppPreferences @Inject constructor(
             override var value by SharedPreference_String(name, preferences, "")
         }
 
+    val AI_PROVIDER_ID = object : Preference<String>("AI_PROVIDER_ID") {
+        override var value by SharedPreference_String(name, preferences, "")
+    }
+    val AI_PROVIDER_BASE_URL = object : Preference<String>("AI_PROVIDER_BASE_URL") {
+        override var value by SharedPreference_String(name, preferences, "")
+    }
+    val AI_MODEL_DEFAULT = object : Preference<String>("AI_MODEL_DEFAULT") {
+        override var value by SharedPreference_String(name, preferences, "")
+    }
+    val AI_MODEL_PER_TASK =
+        object : Preference<Map<String, String>>("AI_MODEL_PER_TASK") {
+            override var value by SharedPreference_Serializable<Map<String, String>>(
+                name = name,
+                sharedPreferences = preferences,
+                defaultValue = mapOf(),
+                encode = { Json.encodeToString(it) },
+                decode = { Json.decodeFromString(it) }
+            )
+        }
+    val AI_TRANSLATION_TARGET = object : Preference<String>("AI_TRANSLATION_TARGET") {
+        override var value by SharedPreference_String(name, preferences, "")
+    }
+    val AI_MAX_CONCURRENT_REQUESTS =
+        object : Preference<Int>("AI_MAX_CONCURRENT_REQUESTS") {
+            override var value by SharedPreference_Int(name, preferences, 1)
+        }
+    val AI_REVISIONS_ACTIVE = object : Preference<Boolean>("AI_REVISIONS_ACTIVE") {
+        override var value by SharedPreference_Boolean(name, preferences, true)
+    }
+
     val GLOBAL_APP_UPDATER_CHECKER_ENABLED =
         object : Preference<Boolean>("GLOBAL_APP_UPDATER_CHECKER_ENABLED") {
             override var value by SharedPreference_Boolean(name, preferences, true)

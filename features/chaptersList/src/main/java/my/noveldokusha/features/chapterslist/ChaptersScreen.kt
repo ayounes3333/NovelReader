@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RemoveDone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Favorite
@@ -80,6 +81,7 @@ import my.noveldoksuha.coreui.theme.textPadding
 import my.noveldokusha.chapterslist.R
 import my.noveldokusha.core.isLocalUri
 import my.noveldokusha.feature.local_database.ChapterWithContext
+import my.noveldokusha.tooling.ai_engine.domain.AiTask
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,6 +105,10 @@ internal fun ChaptersScreen(
     onSelectionModeChapterClick: (chapter: ChapterWithContext) -> Unit,
     onSelectionModeChapterLongClick: (chapter: ChapterWithContext) -> Unit,
     onChapterDownload: (chapter: ChapterWithContext) -> Unit,
+    onChapterAiTask: (chapter: ChapterWithContext, task: AiTask) -> Unit,
+    onRunBulkAiTask: (task: AiTask, regenerate: Boolean) -> Unit,
+    onRetryFailedBulk: () -> Unit,
+    initiallyShowBulkAiSheet: Boolean = false,
     onPullRefresh: () -> Unit,
     onCoverLongClick: () -> Unit,
     onChangeCover: () -> Unit,
@@ -113,8 +119,10 @@ internal fun ChaptersScreen(
 ) {
     var showDropDown by rememberSaveable { mutableStateOf(false) }
     var showBottomSheet by rememberSaveable { mutableStateOf(false) }
+    var showBulkAiSheet by rememberSaveable { mutableStateOf(initiallyShowBulkAiSheet) }
     var showSearchBar by rememberSaveable { mutableStateOf(false) }
     var showDeleteConfirmDialog by rememberSaveable { mutableStateOf(false) }
+
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val lazyListState = rememberLazyListState()
     val areSelectedChaptersRead = state.selectedChaptersUrl.keys.all { url ->
@@ -314,6 +322,7 @@ internal fun ChaptersScreen(
                 onChapterClick = if (state.isInSelectionMode.value) onSelectionModeChapterClick else onChapterClick,
                 onChapterLongClick = if (state.isInSelectionMode.value) onSelectionModeChapterLongClick else onChapterLongClick,
                 onChapterDownload = onChapterDownload,
+                onChapterAiTask = onChapterAiTask,
                 onPullRefresh = onPullRefresh,
                 onCoverLongClick = onCoverLongClick,
                 onGlobalSearchClick = onGlobalSearchClick,
@@ -337,6 +346,15 @@ internal fun ChaptersScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
 
+                        if (state.aiAvailable.value) {
+                            IconButton(onClick = { showBulkAiSheet = true }) {
+                                Icon(
+                                    Icons.Outlined.AutoAwesome,
+                                    stringResource(id = R.string.ai_tools),
+                                    tint = ColorAccent
+                                )
+                            }
+                        }
                         if (!state.isLocalSource.value) {
                             IconButton(onClick = onSelectedDeleteDownloads) {
                                 Icon(
@@ -462,6 +480,15 @@ internal fun ChaptersScreen(
         visible = showBottomSheet,
         onDismiss = { showBottomSheet = false },
         state = state
+    )
+
+    AiBulkSheet(
+        visible = showBulkAiSheet,
+        state = state,
+        latestJob = state.aiBulkLatestJob.value,
+        onDismiss = { showBulkAiSheet = false },
+        onRun = onRunBulkAiTask,
+        onRetryFailed = onRetryFailedBulk,
     )
 
     if (showDeleteConfirmDialog) {

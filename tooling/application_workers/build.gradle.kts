@@ -16,6 +16,7 @@ dependencies {
     implementation(projects.scraper)
     implementation(projects.navigation)
     implementation(projects.tooling.localDatabase)
+    implementation(projects.tooling.aiEngine)
 
     implementation(libs.timber)
     implementation(libs.androidx.workmanager)

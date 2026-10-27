@@ -29,6 +29,7 @@ internal class ReaderChaptersLoader(
     private val translatorIsActive: () -> Boolean,
     private val translatorSourceLanguageOrNull: () -> String?,
     private val translatorTargetLanguageOrNull: () -> String?,
+    private val aiBodyOrNull: suspend (chapterUrl: String) -> String?,
     private val bookUrl: String,
     val orderedChapters: List<Chapter>,
     @Volatile var readerState: ReaderState,
@@ -441,12 +442,14 @@ internal class ReaderChaptersLoader(
 
         when (val res = readerRepository.downloadChapter(chapter.url)) {
             is Response.Success -> {
+                // AI revision (when enabled and present) overrides the original body
+                val chapterText = aiBodyOrNull(chapter.url) ?: res.data
                 // Split chapter text into items
                 val itemsOriginal = textToItemsConverter(
                     chapterUrl = chapter.url,
                     chapterIndex = chapterIndex,
                     chapterItemPositionDisplacement = chapterItemPosition,
-                    text = res.data,
+                    text = chapterText,
                 )
                 chapterItemPosition += itemsOriginal.size
 

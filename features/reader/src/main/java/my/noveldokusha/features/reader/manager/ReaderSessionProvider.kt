@@ -2,6 +2,7 @@ package my.noveldokusha.features.reader.manager
 
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
+import my.noveldoksuha.data.AiRepository
 import my.noveldoksuha.data.AppRepository
 import my.noveldokusha.core.appPreferences.AppPreferences
 import my.noveldokusha.features.reader.ReaderRepository
@@ -18,6 +19,7 @@ internal class ReaderSessionProvider @Inject constructor(
     private val translationManager: TranslationManager,
     private val readerRepository: ReaderRepository,
     private val readerViewHandlersActions: ReaderViewHandlersActions,
+    private val aiRepository: AiRepository,
 ) {
     fun create(
         bookUrl: String,
@@ -31,5 +33,7 @@ internal class ReaderSessionProvider @Inject constructor(
         context = context,
         readerRepository = readerRepository,
         readerViewHandlersActions = readerViewHandlersActions,
+        aiRepository = aiRepository,
+        aiNoSummaryText = context.getString(my.noveldokusha.reader.R.string.ai_summary_missing),
     )
 }

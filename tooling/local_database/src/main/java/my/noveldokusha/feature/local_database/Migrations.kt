@@ -44,6 +44,37 @@ internal fun databaseMigrations() = arrayOf(
         // Add timestamp tracking to ChapterBody table
         it.execSQL("ALTER TABLE ChapterBody ADD COLUMN createdEpochTimeMilli INTEGER NOT NULL DEFAULT ${System.currentTimeMillis()}")
         it.execSQL("ALTER TABLE ChapterBody ADD COLUMN lastUpdatedEpochTimeMilli INTEGER NOT NULL DEFAULT ${System.currentTimeMillis()}")
+    },
+    migration(9) {
+        // AI integration: chapter revisions (non-destructive) + prompt templates
+        it.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `ChapterAiRevision` (
+            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            `chapterUrl` TEXT NOT NULL,
+            `taskType` TEXT NOT NULL,
+            `meta` TEXT NOT NULL,
+            `content` TEXT NOT NULL,
+            `model` TEXT NOT NULL,
+            `providerId` TEXT NOT NULL,
+            `active` INTEGER NOT NULL,
+            `createdEpochTimeMilli` INTEGER NOT NULL)
+            """.trimIndent()
+        )
+        it.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_ChapterAiRevision_chapterUrl` ON `ChapterAiRevision` (`chapterUrl`)"
+        )
+        it.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `AiPrompt` (
+            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            `name` TEXT NOT NULL,
+            `systemPrompt` TEXT NOT NULL,
+            `taskType` TEXT NOT NULL,
+            `meta` TEXT NOT NULL,
+            `isBuiltIn` INTEGER NOT NULL)
+            """.trimIndent()
+        )
     }
 )
 

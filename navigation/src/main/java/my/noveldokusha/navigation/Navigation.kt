@@ -9,6 +9,15 @@ import javax.inject.Inject
 
 interface NavigationRoutes {
 
+    companion object {
+        /**
+         * Boolean intent extra: when set on a [chapters] intent, the chapters
+         * screen opens with the AI bulk task sheet expanded (notification
+         * tap-through).
+         */
+        const val EXTRA_OPEN_AI_BULK_SHEET = "my.noveldokusha.extra.OPEN_AI_BULK_SHEET"
+    }
+
     fun main(context: Context): Intent
 
     fun chapters(context: Context, bookMetadata: BookMetadata): Intent

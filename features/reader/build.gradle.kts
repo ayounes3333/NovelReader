@@ -19,6 +19,7 @@ dependencies {
     implementation(projects.tooling.localDatabase)
     implementation(projects.tooling.textToSpeech)
     implementation(projects.tooling.textTranslator.domain)
+    implementation(projects.tooling.aiEngine)
     implementation(projects.tooling.algorithms)
 
     implementation(libs.material)

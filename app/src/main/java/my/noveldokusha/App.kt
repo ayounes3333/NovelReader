@@ -2,15 +2,14 @@ package my.noveldokusha
 
 import android.app.Application
 import android.util.Log
+import androidx.hilt.work.HiltWorkerFactory
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration
 import coil.ImageLoader
 import coil.ImageLoaderFactory
-import dagger.hilt.EntryPoints
 import dagger.hilt.android.HiltAndroidApp
-import my.noveldokusha.di.HiltAppEntryPoint
 import my.noveldokusha.network.NetworkClient
 import my.noveldokusha.network.ScraperNetworkClient
 import my.noveldokusha.tooling.application_workers.setup.PeriodicWorkersInitializer
@@ -27,6 +26,9 @@ class App : Application(), ImageLoaderFactory, Configuration.Provider {
 
     @Inject
     lateinit var periodicWorkersInitializer: PeriodicWorkersInitializer
+
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
 
     override fun onCreate() {
         super.onCreate()
@@ -55,15 +57,12 @@ class App : Application(), ImageLoaderFactory, Configuration.Provider {
         else -> ImageLoader(this)
     }
 
-    // WorkManager
+    // WorkManager: standard Hilt worker factory — instantiates every
+    // @HiltWorker (library updates, epub export, AI bulk, syncs, ...)
     override val workManagerConfiguration: Configuration by lazy {
-        val appWorkerFactory = EntryPoints
-            .get(this, HiltAppEntryPoint::class.java)
-            .workerFactory()
-
         Configuration.Builder()
             .setMinimumLoggingLevel(if (BuildConfig.DEBUG) Log.DEBUG else Log.INFO)
-            .setWorkerFactory(appWorkerFactory)
+            .setWorkerFactory(workerFactory)
             .build()
     }
 

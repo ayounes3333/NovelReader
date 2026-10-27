@@ -26,6 +26,12 @@ class AppRepository @Inject constructor(
 ) {
     val settings = Settings()
     val eventDataRestored = MutableSharedFlow<Unit>()
+    val chapterAiRevisions = ChapterAiRevisionRepository(
+        dao = db.chapterAiRevisionDao()
+    )
+    val aiPrompts = AiPromptsDaoRepository(
+        dao = db.aiPromptDao()
+    )
 
     suspend fun toggleBookmark(bookUrl: String, bookTitle: String): Boolean {
         val realUrl = appFileResolver.getLocalIfContentType(bookUrl, bookFolderName = bookTitle)

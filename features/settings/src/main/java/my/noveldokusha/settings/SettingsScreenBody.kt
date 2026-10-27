@@ -30,6 +30,7 @@ import my.noveldoksuha.coreui.theme.Themes
 import my.noveldokusha.settings.sections.AppUpdates
 import my.noveldokusha.settings.sections.LibraryAutoUpdate
 import my.noveldokusha.settings.sections.ScraperTestingSection
+import my.noveldokusha.settings.sections.SettingsAi
 import my.noveldokusha.settings.sections.SettingsBackup
 import my.noveldokusha.settings.sections.SettingsData
 import my.noveldokusha.settings.sections.SettingsTheme
@@ -98,6 +99,8 @@ internal fun SettingsScreenBody(
         )
         HorizontalDivider()
         SyncSettingsSection()
+        HorizontalDivider()
+        SettingsAi()
         if (state.isTranslationSettingsVisible.value) {
             HorizontalDivider()
             SettingsTranslationModels(

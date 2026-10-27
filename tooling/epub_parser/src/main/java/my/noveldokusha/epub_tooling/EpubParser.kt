@@ -120,35 +120,64 @@ suspend fun epubParser(
         }
     }
 
-    val ncxFilePath = manifestItems["ncx"]?.absPath
-    val ncxFile = files[ncxFilePath] ?: throw Exception("ncx file missing")
+    // Resolve the table of contents file. The manifest id is not guaranteed to be
+    // "ncx", so first honor the spine's `toc` attribute, then look for the NCX
+    // media-type, and finally fall back to the EPUB 3 nav document.
+    val ncxFilePath = spine.getAttributeValue("toc")
+        ?.takeIf { it.isNotBlank() && manifestItems.containsKey(it) }
+        ?.let { manifestItems.getValue(it).absPath }
+        ?: manifestItems.values
+            .firstOrNull { it.mediaType == "application/x-dtbncx+xml" }
+            ?.absPath
+        ?: manifestItems["ncx"]?.absPath
 
-    // Resolve NCX href values relative to the NCX file's directory, the same way
+    val navFilePath = manifestItems.values
+        .firstOrNull { it.properties.split(' ').contains("nav") }
+        ?.absPath
+
+    val tocFilePath = ncxFilePath ?: navFilePath
+        ?: throw Exception("ncx file missing")
+    val tocFile = files[tocFilePath] ?: throw Exception("ncx file missing")
+
+    // Resolve TOC href values relative to the TOC file's directory, the same way
     // hrefAbsolutePath() resolves manifest hrefs relative to the OPF directory.
-    // This handles NCX src values like "../Text/chapter.xhtml" correctly.
-    val ncxHrefRootPath = File(ncxFilePath ?: "").parentFile ?: File("")
-    fun String.ncxHrefAbsolutePath(): String {
+    // This handles src values like "../Text/chapter.xhtml" correctly.
+    val tocHrefRootPath = File(tocFilePath).parentFile ?: File("")
+    fun String.tocHrefAbsolutePath(): String {
         // Strip fragment before resolving path, then re-append it
         val fragIdx = indexOf('#')
         val pathPart = if (fragIdx >= 0) substring(0, fragIdx) else this
         val frag = if (fragIdx >= 0) substring(fragIdx) else ""
-        return File(ncxHrefRootPath, pathPart).canonicalFile
+        return File(tocHrefRootPath, pathPart).canonicalFile
             .toPath()
             .invariantSeparatorsPathString
             .removePrefix("/") + frag
     }
 
-    val doc = Jsoup.parse(ncxFile.data.inputStream(), "UTF-8", "")
-    val navMap = doc.selectFirst("navMap") ?: throw Exception("Invalid NCX file: navMap not found")
+    val doc = Jsoup.parse(tocFile.data.inputStream(), "UTF-8", "")
 
-    val tocEntries = navMap.select("navPoint").map { navPoint ->
-        val title = navPoint.selectFirst("navLabel")?.selectFirst("text")?.text() ?: ""
-        // Resolve the src relative to the NCX file location so that paths like
-        // "../Text/chapter.xhtml" are canonicalized to "Text/chapter.xhtml" and
-        // match what hrefAbsolutePath() produces for the spine items.
-        val link = navPoint.selectFirst("content")?.attribute("src")?.value
-            ?.decodedURL?.ncxHrefAbsolutePath() ?: ""
-        ToCEntry(title, link)
+    val tocEntries = if (doc.selectFirst("navMap") != null) {
+        val navMap = doc.selectFirst("navMap")!!
+        navMap.select("navPoint").map { navPoint ->
+            val title = navPoint.selectFirst("navLabel")?.selectFirst("text")?.text() ?: ""
+            // Resolve the src relative to the TOC file location so that paths like
+            // "../Text/chapter.xhtml" are canonicalized to "Text/chapter.xhtml" and
+            // match what hrefAbsolutePath() produces for the spine items.
+            val link = navPoint.selectFirst("content")?.attribute("src")?.value
+                ?.decodedURL?.tocHrefAbsolutePath() ?: ""
+            ToCEntry(title, link)
+        }
+    } else {
+        // EPUB 3 navigation document: extract entries from the toc <nav> section
+        val tocNav = doc.select("nav").firstOrNull { nav ->
+            nav.attributes().any { it.key.endsWith("type") && it.value == "toc" }
+        } ?: doc.selectFirst("nav")
+        (tocNav ?: doc.body()).select("a[href]").map { anchor ->
+            ToCEntry(
+                chapterTitle = anchor.text(),
+                chapterLink = anchor.attr("href").decodedURL.tocHrefAbsolutePath()
+            )
+        }
     }
 
     // Function to check if a spine item is a chapter

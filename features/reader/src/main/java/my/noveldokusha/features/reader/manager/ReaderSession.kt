@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import my.noveldoksuha.data.AiRepository
 import my.noveldoksuha.data.AppRepository
 import my.noveldokusha.core.appPreferences.AppPreferences
 import my.noveldokusha.features.reader.ReaderRepository
@@ -25,6 +26,7 @@ import my.noveldokusha.features.reader.domain.ReaderItem
 import my.noveldokusha.features.reader.domain.ReaderState
 import my.noveldokusha.features.reader.domain.ReadingChapterPosStats
 import my.noveldokusha.features.reader.domain.chapterReadPercentage
+import my.noveldokusha.features.reader.features.ReaderAi
 import my.noveldokusha.features.reader.features.ReaderChaptersLoader
 import my.noveldokusha.features.reader.features.ReaderLiveTranslation
 import my.noveldokusha.features.reader.features.ReaderTextToSpeech
@@ -46,6 +48,8 @@ internal class ReaderSession(
     readerViewHandlersActions: ReaderViewHandlersActions,
     @ApplicationContext private val context: Context,
     translationManager: TranslationManager,
+    aiRepository: AiRepository,
+    aiNoSummaryText: String,
 ) {
     private val scope: CoroutineScope = CoroutineScope(
         SupervisorJob() + Dispatchers.Default + CoroutineName("ReaderSession")
@@ -99,12 +103,22 @@ internal class ReaderSession(
         appPreferences = appPreferences
     )
 
+    val readerAi = ReaderAi(
+        aiRepository = aiRepository,
+        appPreferences = appPreferences,
+        scope = scope,
+        noSummaryText = aiNoSummaryText,
+        onBodyAffected = ::reloadCurrentChapterKeepingPosition,
+        onTitleApplied = ::onAiTitleApplied,
+    )
+
     val readerChaptersLoader = ReaderChaptersLoader(
         readerRepository = readerRepository,
         translatorTranslateOrNull = { readerLiveTranslation.translatorState?.translate?.invoke(it) },
         translatorIsActive = { readerLiveTranslation.translatorState != null },
         translatorSourceLanguageOrNull = { readerLiveTranslation.translatorState?.sourceLocale?.displayLanguage },
         translatorTargetLanguageOrNull = { readerLiveTranslation.translatorState?.targetLocale?.displayLanguage },
+        aiBodyOrNull = { readerAi.bodyOrNull(it) },
         bookUrl = bookUrl,
         orderedChapters = orderedChapters,
         readerState = ReaderState.INITIAL_LOAD,
@@ -261,6 +275,27 @@ internal class ReaderSession(
     fun reloadReader() {
         readerChaptersLoader.reload()
         readerTextToSpeech.stop()
+    }
+
+    /**
+     * Reloads the whole reader session state and re-opens the current chapter,
+     * keeping the reading position. Used when the chapter body source changes
+     * (e.g. AI revision toggled or regenerated).
+     */
+    fun reloadCurrentChapterKeepingPosition() {
+        val chapterState = currentChapter.copy()
+        reloadReader()
+        readerChaptersLoader.tryLoadRestartedInitial(chapterState)
+    }
+
+    /**
+     * Updates the in-memory chapter list and reloads so the reader shows the
+     * applied AI title immediately.
+     */
+    private fun onAiTitleApplied(chapterUrl: String, title: String) {
+        val index = orderedChapters.indexOfFirst { it.url == chapterUrl }
+        if (index >= 0) orderedChapters[index] = orderedChapters[index].copy(title = title)
+        reloadCurrentChapterKeepingPosition()
     }
 
     fun updateInfoViewTo(itemIndex: Int) {

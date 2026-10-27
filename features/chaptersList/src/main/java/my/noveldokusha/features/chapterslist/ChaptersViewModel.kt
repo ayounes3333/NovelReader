@@ -9,19 +9,23 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import my.noveldoksuha.interactor.WorkersInteractions
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import my.noveldoksuha.coreui.BaseViewModel
+import my.noveldoksuha.data.AiBulkJob
+import my.noveldoksuha.data.AiBulkJobStore
+import my.noveldoksuha.data.AiRepository
 import my.noveldoksuha.data.AppRepository
 import my.noveldoksuha.data.DownloaderRepository
 import my.noveldoksuha.data.EpubImporterRepository
+import my.noveldoksuha.interactor.WorkersInteractions
 import my.noveldokusha.chapterslist.R
 import my.noveldokusha.core.AppCoroutineScope
 import my.noveldokusha.core.AppFileResolver
+import my.noveldokusha.core.Response
 import my.noveldokusha.core.Toasty
 import my.noveldokusha.core.appPreferences.AppPreferences
 import my.noveldokusha.core.isContentUri
@@ -30,6 +34,7 @@ import my.noveldokusha.core.utils.StateExtra_String
 import my.noveldokusha.core.utils.toState
 import my.noveldokusha.feature.local_database.ChapterWithContext
 import my.noveldokusha.scraper.Scraper
+import my.noveldokusha.tooling.ai_engine.domain.AiTask
 import javax.inject.Inject
 
 interface ChapterStateBundle {
@@ -49,6 +54,8 @@ internal class ChaptersViewModel @Inject constructor(
     private val chaptersRepository: ChaptersRepository,
     private val epubImporterRepository: EpubImporterRepository,
     private val workersInteractions: WorkersInteractions,
+    private val aiRepository: AiRepository,
+    private val aiBulkJobStore: AiBulkJobStore,
     stateHandle: SavedStateHandle,
 ) : BaseViewModel(), ChapterStateBundle {
 
@@ -81,7 +88,13 @@ internal class ChaptersViewModel @Inject constructor(
         settingChapterSort = appPreferences.CHAPTERS_SORT_ASCENDING.state(viewModelScope),
         isLocalSource = mutableStateOf(bookUrl.isLocalUri),
         isRefreshable = mutableStateOf(rawBookUrl.isContentUri || !bookUrl.isLocalUri),
-        searchQuery = mutableStateOf("")
+        searchQuery = mutableStateOf(""),
+        aiAvailable = mutableStateOf(false),
+        aiTranslateTarget = mutableStateOf(""),
+        aiChaptersWithRevision = mutableStateListOf(),
+        aiRunningChapterUrl = mutableStateOf(null),
+        aiBulkLatestJob = mutableStateOf(null),
+        aiCustomPrompts = mutableStateListOf(),
     )
 
     private val _bookDeletedEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
@@ -111,6 +124,114 @@ internal class ChaptersViewModel @Inject constructor(
                 state.chapters.clear()
                 state.chapters.addAll(it)
             }
+        }
+
+        initAiState()
+    }
+
+    private fun initAiState() {
+        viewModelScope.launch {
+            state.aiAvailable.value = aiRepository.isConfigured()
+            state.aiTranslateTarget.value = aiRepository.translationTarget()
+            state.aiCustomPrompts.clear()
+            state.aiCustomPrompts.addAll(aiRepository.getCustomPrompts().map { it.id to it.name })
+            refreshAiBadges()
+        }
+    }
+
+    private var wasBulkJobRunning = false
+
+    init {
+        // Reactive bulk job status: the store emits on every worker update,
+        // so progress and failures show up live without polling.
+        viewModelScope.launch {
+            aiBulkJobStore.flowOfLatestJobForBook(bookUrl).collect { job ->
+                state.aiBulkLatestJob.value = job?.toSheetState()
+                val running = job != null && !job.progress.finished
+                if (wasBulkJobRunning && !running) refreshAiBadges()
+                wasBulkJobRunning = running
+            }
+        }
+    }
+
+    private fun AiBulkJob.toSheetState() = AiBulkSheetJobState(
+        finished = progress.finished,
+        done = progress.done,
+        total = progress.total,
+        skipped = progress.skipped,
+        currentChapterUrl = progress.currentChapterUrl
+            ?.takeIf { !progress.finished },
+        failures = progress.failures,
+    )
+
+    /**
+     * Runs [task] over the selected chapters through the background worker.
+     */
+    fun runBulkAiTask(task: AiTask, regenerate: Boolean) {
+        val chaptersUrl = state.selectedChaptersUrl.keys.toList()
+        if (chaptersUrl.isEmpty()) return
+        if (!aiRepository.isConfigured()) {
+            toasty.show(R.string.ai_no_provider)
+            return
+        }
+        enqueueBulkJob(chaptersUrl = chaptersUrl, task = task, regenerate = regenerate)
+    }
+
+    /** Re-runs the failed chapters of the latest bulk job for this book. */
+    fun retryFailedBulk() {
+        val job = aiBulkJobStore.getLatestJobForBook(bookUrl) ?: return
+        val failedUrls = job.progress.failures.map { it.chapterUrl }
+        if (failedUrls.isEmpty()) return
+        val task = job.input.toTask()
+        enqueueBulkJob(
+            chaptersUrl = failedUrls,
+            task = task,
+            regenerate = true,
+        )
+    }
+
+    private fun enqueueBulkJob(chaptersUrl: List<String>, task: AiTask, regenerate: Boolean) {
+        val running = state.aiBulkLatestJob.value?.finished == false
+        if (running) {
+            toasty.show(R.string.ai_bulk_already_running)
+            return
+        }
+        val job = aiBulkJobStore.createJob(
+            bookUrl = bookUrl,
+            bookTitle = bookTitle,
+            chaptersUrl = chaptersUrl,
+            task = task,
+            model = null,
+            regenerate = regenerate,
+        )
+        workersInteractions.runAiBulkTask(jobId = job.input.jobId)
+        toasty.show(R.string.ai_bulk_started)
+    }
+
+    private suspend fun refreshAiBadges() {
+        val urls = state.chapters.map { it.chapter.url }
+        if (urls.isEmpty()) return
+        val withRevision = aiRepository.getChaptersWithActiveRevision(urls)
+        state.aiChaptersWithRevision.clear()
+        state.aiChaptersWithRevision.addAll(withRevision)
+    }
+
+    /**
+     * Runs a single-chapter AI task from the chapters list. Completion is
+     * surfaced with a toast; the AI badge set is refreshed afterwards.
+     */
+    fun onChapterAiTask(chapter: ChapterWithContext, task: AiTask) {
+        if (state.aiRunningChapterUrl.value != null) return
+        val chapterUrl = chapter.chapter.url
+        state.aiRunningChapterUrl.value = chapterUrl
+        viewModelScope.launch {
+            val result = aiRepository.runTask(chapterUrl = chapterUrl, task = task)
+            state.aiRunningChapterUrl.value = null
+            when (result) {
+                is Response.Success -> toasty.show(R.string.ai_done)
+                is Response.Error -> toasty.show(result.message)
+            }
+            refreshAiBadges()
         }
     }
 

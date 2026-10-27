@@ -25,4 +25,8 @@ internal class AppWorkersInteractions @Inject constructor(
             EpubExportWorker.createRequest(bookUrl = bookUrl, bookTitle = bookTitle)
         )
     }
+
+    override fun runAiBulkTask(jobId: String) {
+        AiBulkTaskWorker.enqueue(workManager = workManager, jobId = jobId)
+    }
 }

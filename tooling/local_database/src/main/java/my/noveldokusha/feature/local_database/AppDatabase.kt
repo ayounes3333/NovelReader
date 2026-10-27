@@ -8,12 +8,16 @@ import androidx.room.TypeConverters
 import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import my.noveldokusha.feature.local_database.DAOs.AiPromptDao
+import my.noveldokusha.feature.local_database.DAOs.ChapterAiRevisionDao
 import my.noveldokusha.feature.local_database.DAOs.ChapterBodyDao
 import my.noveldokusha.feature.local_database.DAOs.ChapterDao
 import my.noveldokusha.feature.local_database.DAOs.LibraryDao
 import my.noveldokusha.feature.local_database.DAOs.NovelFileDao
+import my.noveldokusha.feature.local_database.tables.AiPrompt
 import my.noveldokusha.feature.local_database.tables.Book
 import my.noveldokusha.feature.local_database.tables.Chapter
+import my.noveldokusha.feature.local_database.tables.ChapterAiRevision
 import my.noveldokusha.feature.local_database.tables.ChapterBody
 import my.noveldokusha.feature.local_database.tables.localexplorer.NovelFileInfo
 import java.io.File
@@ -25,6 +29,8 @@ interface AppDatabase {
     fun chapterDao(): ChapterDao
     fun chapterBodyDao(): ChapterBodyDao
     fun novelFilesDao(): NovelFileDao
+    fun chapterAiRevisionDao(): ChapterAiRevisionDao
+    fun aiPromptDao(): AiPromptDao
     val name: String
 
     fun closeDatabase()
@@ -92,9 +98,11 @@ interface AppDatabase {
         Book::class,
         Chapter::class,
         ChapterBody::class,
-        NovelFileInfo::class
+        NovelFileInfo::class,
+        ChapterAiRevision::class,
+        AiPrompt::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -103,6 +111,8 @@ internal abstract class AppRoomDatabase : RoomDatabase(), AppDatabase {
     abstract override fun chapterDao(): ChapterDao
     abstract override fun chapterBodyDao(): ChapterBodyDao
     abstract override fun novelFilesDao(): NovelFileDao
+    abstract override fun chapterAiRevisionDao(): ChapterAiRevisionDao
+    abstract override fun aiPromptDao(): AiPromptDao
 
     override lateinit var name: String
 

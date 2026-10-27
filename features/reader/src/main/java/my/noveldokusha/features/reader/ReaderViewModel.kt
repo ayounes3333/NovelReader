@@ -6,6 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import my.noveldoksuha.coreui.BaseViewModel
 import my.noveldoksuha.coreui.mappers.toTheme
@@ -15,6 +16,8 @@ import my.noveldokusha.core.utils.StateExtra_String
 import my.noveldokusha.features.reader.manager.ReaderManager
 import my.noveldokusha.features.reader.ui.ReaderScreenState
 import my.noveldokusha.features.reader.ui.ReaderViewHandlersActions
+import my.noveldokusha.features.reader.ui.ReaderViewModelAiCallbacks
+import my.noveldokusha.tooling.ai_engine.domain.AiTask
 import javax.inject.Inject
 import kotlin.properties.Delegates
 
@@ -30,7 +33,7 @@ internal class ReaderViewModel @Inject constructor(
     appPreferences: AppPreferences,
     private val readerManager: ReaderManager,
     readerViewHandlersActions: ReaderViewHandlersActions,
-) : BaseViewModel(), ReaderStateBundle {
+) : BaseViewModel(), ReaderStateBundle, ReaderViewModelAiCallbacks {
 
     override var bookUrl by StateExtra_String(stateHandler)
     override var chapterUrl by StateExtra_String(stateHandler)
@@ -63,6 +66,7 @@ internal class ReaderViewModel @Inject constructor(
             keepScreenOn = appPreferences.READER_KEEP_SCREEN_ON.state(viewModelScope),
             textToSpeech = readerSession.readerTextToSpeech.state,
             liveTranslation = readerSession.readerLiveTranslation.state,
+            ai = readerSession.readerAi.state,
             fullScreen = appPreferences.READER_FULL_SCREEN.state(viewModelScope),
             style = ReaderScreenState.Settings.StyleSettingsData(
                 followSystem = appPreferences.THEME_FOLLOW_SYSTEM.state(viewModelScope),
@@ -105,6 +109,35 @@ internal class ReaderViewModel @Inject constructor(
         readerSession.reloadReader()
         chaptersLoader.tryLoadRestartedInitial(currentChapter)
     }
+
+    /**
+     * Refreshes AI chapter-dependent state. Called when the AI panel is opened.
+     */
+    override fun onRefreshAiState() {
+        viewModelScope.launch {
+            readerSession.readerAi.refresh(currentChapterUrlForAi())
+        }
+    }
+
+    /**
+     * Runs an AI task over the current chapter. Body-affecting tasks reload the
+     * reader automatically when the revision is set to be displayed.
+     */
+    override fun onRunAiTask(task: AiTask) {
+        readerSession.readerAi.runTask(
+            chapterUrl = currentChapterUrlForAi(),
+            task = task,
+            label = task.key,
+        )
+    }
+
+    /** Applies the generated title (if any) to the chapter. */
+    override fun onApplyAiTitle() {
+        readerSession.readerAi.state.onApplyTitle()
+    }
+
+    private fun currentChapterUrlForAi(): String =
+        state.readerInfo.chapterUrl.value.ifBlank { chapterUrl }
 
     fun updateInfoViewTo(itemIndex: Int) =
         readerSession.updateInfoViewTo(itemIndex = itemIndex)

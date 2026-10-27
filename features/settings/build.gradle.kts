@@ -18,6 +18,7 @@ dependencies {
     implementation(projects.navigation)
     implementation(projects.tooling.localDatabase)
     implementation(projects.tooling.textTranslator.domain)
+    implementation(projects.tooling.aiEngine)
     implementation(projects.tooling.backupRestore)
     implementation(projects.tooling.backupCreate)
     implementation(project(":tooling:firebase_sync"))
