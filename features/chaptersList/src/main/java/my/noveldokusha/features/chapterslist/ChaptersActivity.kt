@@ -57,6 +57,7 @@ class ChaptersActivity : BaseActivity() {
                     onLibraryToggle = viewModel::toggleBookmark,
                     onSearchBookInDatabase = ::searchBookInDatabase,
                     onResumeReading = ::onOpenLastActiveChapter,
+                    onAskAi = ::onAskAi,
                     onPressBack = ::onBackPressed,
                     onSelectedDeleteDownloads = viewModel::deleteDownloadsSelected,
                     onSelectedDownload = viewModel::downloadSelected,
@@ -87,6 +88,19 @@ class ChaptersActivity : BaseActivity() {
                     onDeleteBookFromDb = viewModel::deleteBookFromDb,
                 )
             }
+        }
+    }
+
+    private fun onAskAi() {
+        lifecycleScope.launch {
+            val chapterUrl = viewModel.getLastReadChapter()
+                ?: viewModel.state.chapters.minByOrNull { it.chapter.position }?.chapter?.url
+                .orEmpty()
+            navigationRoutes.aiChat(
+                this@ChaptersActivity,
+                bookUrl = viewModel.state.book.value.url,
+                chapterUrl = chapterUrl,
+            ).let(::startActivity)
         }
     }
 

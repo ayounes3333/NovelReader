@@ -172,6 +172,19 @@ class AppPreferences @Inject constructor(
     val AI_REVISIONS_ACTIVE = object : Preference<Boolean>("AI_REVISIONS_ACTIVE") {
         override var value by SharedPreference_Boolean(name, preferences, true)
     }
+    val AI_CHAT_WEB_SEARCH_ENABLED = object : Preference<Boolean>("AI_CHAT_WEB_SEARCH_ENABLED") {
+        override var value by SharedPreference_Boolean(name, preferences, true)
+    }
+
+    /** Max tool round-trips per AI chat turn; 0 = unlimited. */
+    val AI_CHAT_MAX_STEPS = object : Preference<Int>("AI_CHAT_MAX_STEPS") {
+        override var value by SharedPreference_Int(name, preferences, 16)
+    }
+
+    /** When the step limit is hit: ask the user whether to continue (true) or answer immediately (false). */
+    val AI_CHAT_ASK_ON_STEP_LIMIT = object : Preference<Boolean>("AI_CHAT_ASK_ON_STEP_LIMIT") {
+        override var value by SharedPreference_Boolean(name, preferences, true)
+    }
 
     val GLOBAL_APP_UPDATER_CHECKER_ENABLED =
         object : Preference<Boolean>("GLOBAL_APP_UPDATER_CHECKER_ENABLED") {

@@ -283,6 +283,13 @@ class ReaderActivity : BaseActivity() {
                             navigationRoutes.webView(this, url = url).let(::startActivity)
                         }
                     },
+                    onOpenAiChat = {
+                        navigationRoutes.aiChat(
+                            this,
+                            bookUrl = viewModel.bookUrl,
+                            chapterUrl = viewModel.state.readerInfo.chapterUrl.value.ifBlank { viewModel.chapterUrl },
+                        ).let(::startActivity)
+                    },
                     readerContent = {
                         AndroidView(factory = { viewBind.root })
                     },

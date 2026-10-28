@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.ColorLens
+import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.BottomAppBar
@@ -85,6 +86,7 @@ internal fun ReaderScreen(
     onTextSizeChanged: (Float) -> Unit,
     onPressBack: () -> Unit,
     onOpenChapterInWeb: () -> Unit,
+    onOpenAiChat: () -> Unit,
     readerContent: @Composable (paddingValues: PaddingValues) -> Unit,
 ) {
     // Capture back action when viewing info
@@ -150,6 +152,9 @@ internal fun ReaderScreen(
                                     icon = Icons.Outlined.AutoAwesome,
                                     onClick = toggleOrSet,
                                 )
+                                if (state.settings.ai.isAvailable.value) IconButton(onClick = onOpenAiChat) {
+                                    Icon(Icons.Outlined.Forum, stringResource(R.string.ai_chat_open))
+                                }
                                 ActionIconItem(
                                     settingType = Type.TextToSpeech,
                                     textId = R.string.voice_reader,
@@ -385,6 +390,7 @@ private fun ViewsPreview(
                 onThemeSelected = {},
                 onPressBack = {},
                 onOpenChapterInWeb = {},
+                onOpenAiChat = {},
                 readerContent = {},
                 onKeepScreenOn = {},
                 onFullScreen = {},

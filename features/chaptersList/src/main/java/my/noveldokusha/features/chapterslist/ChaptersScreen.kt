@@ -90,6 +90,7 @@ internal fun ChaptersScreen(
     onLibraryToggle: () -> Unit,
     onSearchBookInDatabase: () -> Unit,
     onResumeReading: () -> Unit,
+    onAskAi: () -> Unit,
     onPressBack: () -> Unit,
     onSelectedDeleteDownloads: () -> Unit,
     onSelectedDownload: () -> Unit,
@@ -228,6 +229,11 @@ internal fun ChaptersScreen(
                                         },
                                         onSearchBookInDatabase = onSearchBookInDatabase,
                                         onResumeReading = onResumeReading,
+                                        aiAvailable = state.aiAvailable.value,
+                                        onAskAi = {
+                                            showDropDown = false
+                                            onAskAi()
+                                        },
                                         onChangeCover = onChangeCover,
                                         onExportAsEpub = {
                                             showDropDown = false

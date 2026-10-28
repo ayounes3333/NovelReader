@@ -8,12 +8,14 @@ import androidx.room.TypeConverters
 import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import my.noveldokusha.feature.local_database.DAOs.AiChatMessageDao
 import my.noveldokusha.feature.local_database.DAOs.AiPromptDao
 import my.noveldokusha.feature.local_database.DAOs.ChapterAiRevisionDao
 import my.noveldokusha.feature.local_database.DAOs.ChapterBodyDao
 import my.noveldokusha.feature.local_database.DAOs.ChapterDao
 import my.noveldokusha.feature.local_database.DAOs.LibraryDao
 import my.noveldokusha.feature.local_database.DAOs.NovelFileDao
+import my.noveldokusha.feature.local_database.tables.AiChatMessage
 import my.noveldokusha.feature.local_database.tables.AiPrompt
 import my.noveldokusha.feature.local_database.tables.Book
 import my.noveldokusha.feature.local_database.tables.Chapter
@@ -31,6 +33,7 @@ interface AppDatabase {
     fun novelFilesDao(): NovelFileDao
     fun chapterAiRevisionDao(): ChapterAiRevisionDao
     fun aiPromptDao(): AiPromptDao
+    fun aiChatMessageDao(): AiChatMessageDao
     val name: String
 
     fun closeDatabase()
@@ -100,9 +103,10 @@ interface AppDatabase {
         ChapterBody::class,
         NovelFileInfo::class,
         ChapterAiRevision::class,
-        AiPrompt::class
+        AiPrompt::class,
+        AiChatMessage::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -113,6 +117,7 @@ internal abstract class AppRoomDatabase : RoomDatabase(), AppDatabase {
     abstract override fun novelFilesDao(): NovelFileDao
     abstract override fun chapterAiRevisionDao(): ChapterAiRevisionDao
     abstract override fun aiPromptDao(): AiPromptDao
+    abstract override fun aiChatMessageDao(): AiChatMessageDao
 
     override lateinit var name: String
 

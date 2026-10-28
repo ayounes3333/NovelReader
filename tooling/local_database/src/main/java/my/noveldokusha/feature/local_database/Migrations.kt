@@ -75,6 +75,25 @@ internal fun databaseMigrations() = arrayOf(
             `isBuiltIn` INTEGER NOT NULL)
             """.trimIndent()
         )
+    },
+    migration(10) {
+        // AI assistant chat history, one conversation per book
+        it.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `AiChatMessage` (
+            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            `bookUrl` TEXT NOT NULL,
+            `role` TEXT NOT NULL,
+            `content` TEXT NOT NULL,
+            `toolCallsJson` TEXT,
+            `toolCallId` TEXT,
+            `toolName` TEXT,
+            `createdEpochTimeMilli` INTEGER NOT NULL)
+            """.trimIndent()
+        )
+        it.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_AiChatMessage_bookUrl` ON `AiChatMessage` (`bookUrl`)"
+        )
     }
 )
 

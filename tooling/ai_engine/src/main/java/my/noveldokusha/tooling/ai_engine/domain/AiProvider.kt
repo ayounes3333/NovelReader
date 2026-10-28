@@ -27,4 +27,11 @@ interface AiProvider {
 
     /** Runs a single completion. */
     suspend fun complete(request: AiRequest): Response<AiResult>
+
+    /**
+     * Runs a multi-turn chat completion, optionally offering function tools.
+     * Implementations surface a provider's refusal of the `tools` field as
+     * [Response.Error] so callers can fall back to a text protocol.
+     */
+    suspend fun chat(request: AiChatRequest): Response<AiChatResult>
 }

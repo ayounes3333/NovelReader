@@ -22,7 +22,7 @@ No ktlint/detekt configured. Source files may have CRLF line endings — harmles
 | `app` | `App.kt` (Hilt entry, WorkManager `HiltWorkerFactory`), `MainActivity`, DI glue |
 | `core` | `AppPreferences` (all user settings, SharedPreferences delegates), base utils, `AppFileResolver` |
 | `coreui` | Shared Compose theme/components (design system) |
-| `data` | Repositories: `AppRepository` (facade), `BookChaptersRepository`, `ChapterBodyRepository`, `DownloaderRepository`, AI repos (`AiRepository`, `AiPromptsRepository`, `AiBatchRepositories`, `AiUsageStore`, `AiBulkJobStore`), `interactor/` use-cases |
+| `data` | Repositories: `AppRepository` (facade), `BookChaptersRepository`, `ChapterBodyRepository`, `DownloaderRepository`, AI repos (`AiRepository`, `AiPromptsRepository`, `AiBatchRepositories`, `AiUsageStore`, `AiBulkJobStore`, `AiChatRepository` + `AiChatTools`, `WebSearchClient` DuckDuckGo HTML scraping), `interactor/` use-cases |
 | `networking` | `NetworkClient` / `ScraperNetworkClient` (OkHttp) |
 | `scraper` | Source/catalog scrapers for novel websites (`src/main/.../sources/`) |
 | `navigation` | `Navigation.kt` — central Activity-based nav interface (`NavigationRoutes`) |
@@ -32,14 +32,17 @@ No ktlint/detekt configured. Source files may have CRLF line endings — harmles
 `libraryExplorer` (home/library), `catalogExplorer`, `sourceExplorer`, `globalSourceSearch`,
 `databaseExplorer`, `chaptersList` (book detail; AI bulk sheet), `reader` (core reading UI,
 TTS, live translation, AI actions; `manager/ReaderSession` orchestrates state,
-`features/ReaderChaptersLoader` loads text), `settings`, `webview`, `localExplorer`.
+`features/ReaderChaptersLoader` loads text), `settings`, `webview`, `localExplorer`,
+`aiChat` (per-book AI assistant chat; opened from reader top bar and chapters menu).
 
 ### tooling/
 - `local_database` — Room `AppDatabase` (tables: Book, Chapter, ChapterBody, AiPrompt,
-  ChapterAiRevision; `DAOs/`, `Migrations.kt` — bump version + add migration on schema change)
-- `ai_engine` — AI core: `domain/` (AiTask, PromptTemplate, DefaultPrompts, AiProvider),
-  `engine/` (OpenAiCompatibleProvider, AiChunker, AiHttpClient, ProviderRegistry,
-  AiSecretsStore — API keys in EncryptedSharedPreferences, never in `AppPreferences`)
+  ChapterAiRevision, AiChatMessage; `DAOs/`, `Migrations.kt` — bump version + add migration on schema change)
+- `ai_engine` — AI core: `domain/` (AiTask, PromptTemplate, DefaultPrompts, AiProvider,
+  AiChatModels — chat messages/tool specs), `engine/` (OpenAiCompatibleProvider — `complete()`
+  and `chat()` with native function calling, AiAgentLoop — model→tool→model loop with
+  TextToolProtocol fallback for endpoints lacking tool support, AiChunker, AiHttpClient,
+  ProviderRegistry, AiSecretsStore — API keys in EncryptedSharedPreferences, never in `AppPreferences`)
 - `application_workers` — WorkManager `@HiltWorker`s (library update, backup, AiBulkTaskWorker);
   `AppWorkersInteractions` implements `data`'s `WorkersInteractions`
 - `text_translator` — on-device MLKit translation (`translator` real / `translator_nop` FOSS flavor)
@@ -60,3 +63,7 @@ TTS, live translation, AI actions; `manager/ReaderSession` orchestrates state,
 - AI feature flow: UI (reader/chaptersList/settings) → `data` AI repositories →
   `tooling/ai_engine`; bulk jobs run via `AiBulkTaskWorker`; results stored as
   `ChapterAiRevision` rows keyed by chapter URL + task type.
+- AI chat flow: `features/aiChat` → `AiChatRepository.send()` → `AiAgentLoop` with
+  `AiChatTools` (read_chapter, list_chapters, get_novel_info, search_novel_text, web_search,
+  fetch_web_page). History persisted per book in `AiChatMessage`; web tools gated by
+  `AI_CHAT_WEB_SEARCH_ENABLED`. Add new tools in `AiChatTools.all()`.

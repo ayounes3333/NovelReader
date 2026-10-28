@@ -36,6 +36,12 @@ class ProviderRegistry @Inject constructor(
             suggestedModel = "glm-4-flash",
         ),
         AiProviderConfig(
+            id = ID_ZAI_CODING,
+            name = "Z.ai (GLM Coding Plan)",
+            baseUrl = "https://api.z.ai/api/coding/paas/v4",
+            suggestedModel = "glm-4.6",
+        ),
+        AiProviderConfig(
             id = ID_OPENCODE,
             name = "OpenCode Zen",
             baseUrl = "https://opencode.ai/zen/v1",
@@ -80,6 +86,7 @@ class ProviderRegistry @Inject constructor(
         const val ID_OPENAI = "openai"
         const val ID_DEEPSEEK = "deepseek"
         const val ID_ZAI = "zai"
+        const val ID_ZAI_CODING = "zai_coding"
         const val ID_OPENCODE = "opencode"
         const val ID_CUSTOM = "custom"
     }

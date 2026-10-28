@@ -5,6 +5,7 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.DropdownMenuItem
@@ -20,6 +21,8 @@ internal fun ChaptersDropDown(
     openInBrowser: () -> Unit,
     onSearchBookInDatabase: () -> Unit,
     onResumeReading: () -> Unit,
+    aiAvailable: Boolean,
+    onAskAi: () -> Unit,
     onChangeCover: () -> Unit,
     onExportAsEpub: () -> Unit,
     onDeleteBookFromDb: () -> Unit,
@@ -54,6 +57,18 @@ internal fun ChaptersDropDown(
             Icon(
                 Icons.Filled.PlayArrow,
                 stringResource(R.string.resume_reading),
+            )
+        }
+    )
+    if (aiAvailable) DropdownMenuItem(
+        onClick = onAskAi,
+        text = {
+            Text(text = stringResource(id = R.string.ai_chat_open))
+        },
+        leadingIcon = {
+            Icon(
+                Icons.Outlined.Forum,
+                stringResource(R.string.ai_chat_open),
             )
         }
     )

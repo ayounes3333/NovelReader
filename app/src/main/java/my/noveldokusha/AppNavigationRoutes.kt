@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import my.noveldoksuha.databaseexplorer.databaseSearch.DatabaseSearchActivity
 import my.noveldoksuha.databaseexplorer.databaseSearch.DatabaseSearchExtras
+import my.noveldokusha.aichat.AiChatActivity
 import my.noveldokusha.features.chapterslist.ChaptersActivity
 import my.noveldokusha.features.main.MainActivity
 import my.noveldokusha.features.reader.ReaderActivity
@@ -79,6 +80,10 @@ class AppNavigationRoutes @Inject constructor() : NavigationRoutes {
 
     override fun webView(context: Context, url: String): Intent {
         return WebViewActivity.IntentData(context, url = url)
+    }
+
+    override fun aiChat(context: Context, bookUrl: String, chapterUrl: String): Intent {
+        return AiChatActivity.IntentData(context, bookUrl = bookUrl, chapterUrl = chapterUrl)
     }
 
 }

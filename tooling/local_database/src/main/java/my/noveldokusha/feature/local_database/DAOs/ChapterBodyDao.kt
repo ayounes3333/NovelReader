@@ -29,6 +29,17 @@ interface ChapterBodyDao {
     @Query("SELECT * FROM ChapterBody WHERE url = :url")
     suspend fun get(url: String): ChapterBody?
 
+    @Query(
+        """
+        SELECT ChapterBody.* FROM ChapterBody
+        INNER JOIN Chapter ON Chapter.url = ChapterBody.url
+        WHERE Chapter.bookUrl = :bookUrl AND ChapterBody.body LIKE '%' || :escapedQuery || '%' ESCAPE '\'
+        ORDER BY Chapter.position
+        LIMIT :limit
+        """
+    )
+    suspend fun searchInBook(bookUrl: String, escapedQuery: String, limit: Int): List<ChapterBody>
+
     @Query("DELETE FROM ChapterBody WHERE ChapterBody.url NOT IN (SELECT Chapter.url FROM Chapter)")
     suspend fun removeAllNonChapterRows()
 

@@ -135,6 +135,7 @@ dependencies {
     implementation(projects.features.localExplorer)
     implementation(projects.features.settings)
     implementation(projects.features.webview)
+    implementation(projects.features.aiChat)
 
     implementation(projects.data)
     implementation(projects.core)

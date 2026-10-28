@@ -52,15 +52,35 @@ class AiHttpClient @Inject constructor() {
         }
     }
 
-    private fun errorMessage(code: Int, body: String, retryAfter: String?): String = when (code) {
-        401, 403 -> "Authentication failed: check the API key for this provider."
-        404 -> "Endpoint not found: verify the provider base URL."
-        429 -> buildString {
-            append("Rate limited by the provider.")
-            if (!retryAfter.isNullOrEmpty()) append(" Retry in $retryAfter seconds.")
-        }
+    private fun errorMessage(code: Int, body: String, retryAfter: String?): String {
+        val detail = providerMessage(body)
+        return when (code) {
+            401, 403 -> "Authentication failed: check the API key for this provider." + detail
+            404 -> "Endpoint not found: verify the provider base URL." + detail
+            // Some providers (e.g. Z.ai) also use 429 for quota/balance problems,
+            // so the provider's own message is essential here.
+            429 -> buildString {
+                append("Provider refused the request (HTTP 429: rate limit or quota/balance).")
+                if (!retryAfter.isNullOrEmpty()) append(" Retry in $retryAfter seconds.")
+                append(detail)
+            }
 
-        in 500..599 -> "AI provider server error ($code). Try again later."
-        else -> "Request failed (HTTP $code): ${body.take(300)}"
+            in 500..599 -> "AI provider server error ($code). Try again later." + detail
+            else -> "Request failed (HTTP $code): ${body.take(300)}"
+        }
+    }
+
+    /** Extracts `error.message` (and code) from an OpenAI-style error body, if present. */
+    private fun providerMessage(body: String): String {
+        if (body.isBlank()) return ""
+        val message = MESSAGE_REGEX.find(body)?.groupValues?.get(1)
+        val errorCode = CODE_REGEX.find(body)?.groupValues?.get(1)
+        val text = message ?: body.take(200)
+        return "\nProvider says: " + (if (errorCode != null) "[$errorCode] " else "") + text
+    }
+
+    private companion object {
+        val MESSAGE_REGEX = Regex(""""message"\s*:\s*"((?:[^"\\]|\\.)*)"""")
+        val CODE_REGEX = Regex(""""code"\s*:\s*"?([A-Za-z0-9_\-]+)"?""")
     }
 }

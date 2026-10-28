@@ -64,6 +64,7 @@ class AppRepository @Inject constructor(
             db.libraryDao().removeAllNonLibraryRows()
             db.chapterDao().removeAllNonLibraryRows()
             db.chapterBodyDao().removeAllNonChapterRows()
+            db.aiChatMessageDao().removeAllNonLibraryRows()
         }
 
         /**

@@ -44,6 +44,9 @@ interface NavigationRoutes {
 
     fun globalSearch(context: Context, text: String): Intent
     fun sourceCatalog(context: Context, sourceBaseUrl: String): Intent
+
+    /** AI assistant chat about [bookUrl], positioned at [chapterUrl] (may be blank). */
+    fun aiChat(context: Context, bookUrl: String, chapterUrl: String): Intent
 }
 
 @HiltViewModel

@@ -15,6 +15,7 @@ dependencies {
     implementation(projects.tooling.epubParser)
     implementation(projects.tooling.aiEngine)
 
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.jsoup)
     implementation(libs.readability4j)
     implementation(libs.gson)
