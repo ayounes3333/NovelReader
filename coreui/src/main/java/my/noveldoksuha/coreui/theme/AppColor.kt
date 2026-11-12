@@ -9,6 +9,8 @@ import androidx.compose.ui.graphics.Color
 
 @Immutable
 data class AppColor(
+    val accent: Color,
+    val onAccent: Color,
     val tabSurface: Color,
     val bookSurface: Color,
     val checkboxPositive: Color,
@@ -18,35 +20,45 @@ data class AppColor(
     val tintedSelectedSurface: Color,
 )
 
-val light_appColor = AppColor(
-    tabSurface = Indigo90,
-    bookSurface = Indigo95,
+fun lightAppColor(palette: AccentPalette) = AppColor(
+    accent = palette.accent,
+    onAccent = palette.onAccent,
+    tabSurface = palette.t90,
+    bookSurface = palette.t95,
     checkboxPositive = Success500,
     checkboxNegative = Error500,
     checkboxNeutral = Grey900,
-    tintedSurface = Grey25.mix(ColorAccent, 0.65f),
-    tintedSelectedSurface = Grey25.mix(ColorAccent, 0.75f),
+    tintedSurface = Grey25.mix(palette.accent, 0.65f),
+    tintedSelectedSurface = Grey25.mix(palette.accent, 0.75f),
 )
 
-val dark_appColor = AppColor(
-    tabSurface = Color(0xFF2A2535),
+fun darkAppColor(palette: AccentPalette) = AppColor(
+    accent = palette.accent,
+    onAccent = palette.onAccent,
+    tabSurface = palette.darkTint2,
     bookSurface = Grey800,
     checkboxPositive = Success500,
     checkboxNegative = Error500,
     checkboxNeutral = Grey900,
-    tintedSurface = Grey900.mix(ColorAccent, 0.65f),
-    tintedSelectedSurface = Grey900.mix(ColorAccent, 0.75f),
+    tintedSurface = Grey900.mix(palette.accent, 0.65f),
+    tintedSelectedSurface = Grey900.mix(palette.accent, 0.75f),
 )
 
-val black_appColor = AppColor(
-    tabSurface = Indigo20,
+fun blackAppColor(palette: AccentPalette) = AppColor(
+    accent = palette.accent,
+    onAccent = palette.onAccent,
+    tabSurface = palette.t20,
     bookSurface = Grey900,
     checkboxPositive = Success500,
     checkboxNegative = Error500,
     checkboxNeutral = Grey900,
-    tintedSurface = Grey1000.mix(ColorAccent, 0.65f),
-    tintedSelectedSurface = Grey1000.mix(ColorAccent, 0.75f),
+    tintedSurface = Grey1000.mix(palette.accent, 0.65f),
+    tintedSelectedSurface = Grey1000.mix(palette.accent, 0.75f),
 )
+
+val light_appColor = lightAppColor(AccentPalette(DefaultAccent))
+val dark_appColor = darkAppColor(AccentPalette(DefaultAccent))
+val black_appColor = blackAppColor(AccentPalette(DefaultAccent))
 
 val LocalAppColor = compositionLocalOf { light_appColor }
 

@@ -5,6 +5,12 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,7 +33,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -77,125 +82,108 @@ fun VoiceReaderDialog(
                 modifier = Modifier.padding(16.dp)
             ) {
 
-                // Player playback buttons
+                // Player playback buttons: fixed sizes, evenly distributed
                 Row(
-                    horizontalArrangement = Arrangement.Center,
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    val enabled = state.isThereActiveItem.value
                     val alpha by animateFloatAsState(
-                        targetValue = if (state.isThereActiveItem.value) 1f else 0.5f,
+                        targetValue = if (enabled) 1f else 0.5f,
                         label = ""
                     )
-                    IconButton(
+                    PlayerButton(
+                        icon = Icons.Rounded.PlayForWork,
+                        size = 36.dp,
+                        enabled = enabled,
+                        alpha = alpha,
                         onClick = debouncedAction(waitMillis = 100) { state.playFirstVisibleItem() },
-                        enabled = state.isThereActiveItem.value,
-                        modifier = Modifier.alpha(alpha).padding(end = 8.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.PlayForWork,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(36.dp)
-                                .background(ColorAccent, CircleShape),
-                            tint = ColorAccentContent,
-                        )
-                    }
-                    IconButton(
+                    )
+                    PlayerButton(
+                        icon = Icons.Rounded.FastRewind,
+                        size = 34.dp,
+                        enabled = enabled,
+                        alpha = alpha,
                         onClick = debouncedAction(waitMillis = 1000) { state.playPreviousChapter() },
-                        enabled = state.isThereActiveItem.value,
-                        modifier = Modifier.alpha(alpha),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.FastRewind,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(32.dp)
-                                .background(ColorAccent, CircleShape),
-                            tint = ColorAccentContent,
-                        )
-                    }
-                    IconButton(
+                    )
+                    PlayerButton(
+                        icon = Icons.Rounded.NavigateBefore,
+                        size = 40.dp,
+                        enabled = enabled,
+                        alpha = alpha,
                         onClick = debouncedAction(waitMillis = 100) { state.playPreviousItem() },
-                        enabled = state.isThereActiveItem.value,
-                        modifier = Modifier.alpha(alpha),
+                    )
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .weight(1f)
+                            .wrapContentWidth()
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(ColorAccent)
+                            .clickable { state.setPlaying(!state.isPlaying.value) }
                     ) {
-                        Icon(
-                            imageVector = Icons.Rounded.NavigateBefore,
-                            contentDescription = null,
-                            tint = ColorAccentContent,
-                            modifier = Modifier
-                                .size(38.dp)
-                                .background(ColorAccent, CircleShape),
-                        )
-                    }
-                    IconButton(onClick = { state.setPlaying(!state.isPlaying.value) }) {
-                        AnimatedContent(
-                            targetState = state.isPlaying.value,
-                            modifier = Modifier
-                                .size(56.dp)
-                                .background(ColorAccent, CircleShape), label = ""
-                        ) { target ->
-                            when (target) {
-                                true -> Icon(
-                                    Icons.Rounded.Pause,
-                                    contentDescription = null,
-                                    tint = ColorAccentContent,
-                                )
-
-                                false -> Icon(
-                                    Icons.Rounded.PlayArrow,
-                                    contentDescription = null,
-                                    tint = ColorAccentContent,
-                                )
-                            }
+                        AnimatedContent(targetState = state.isPlaying.value, label = "") { target ->
+                            Icon(
+                                imageVector = if (target) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                                contentDescription = null,
+                                tint = ColorAccentContent,
+                                modifier = Modifier.size(32.dp)
+                            )
                         }
                     }
-                    IconButton(
+                    PlayerButton(
+                        icon = Icons.Rounded.NavigateNext,
+                        size = 40.dp,
+                        enabled = enabled,
+                        alpha = alpha,
                         onClick = debouncedAction(waitMillis = 100) { state.playNextItem() },
-                        enabled = state.isThereActiveItem.value,
-                        modifier = Modifier.alpha(alpha),
-                    ) {
-                        Icon(
-                            Icons.Rounded.NavigateNext,
-                            contentDescription = null,
-                            tint = ColorAccentContent,
-                            modifier = Modifier
-                                .size(38.dp)
-                                .background(ColorAccent, CircleShape),
-                        )
-                    }
-                    IconButton(
+                    )
+                    PlayerButton(
+                        icon = Icons.Rounded.FastForward,
+                        size = 34.dp,
+                        enabled = enabled,
+                        alpha = alpha,
                         onClick = debouncedAction(waitMillis = 1000) { state.playNextChapter() },
-                        enabled = state.isThereActiveItem.value,
-                        modifier = Modifier.alpha(alpha),
-                    ) {
-                        Icon(
-                            Icons.Rounded.FastForward,
-                            contentDescription = null,
-                            tint = ColorAccentContent,
-                            modifier = Modifier
-                                .size(32.dp)
-                                .background(ColorAccent, CircleShape),
-                        )
-                    }
-
-                    IconButton(
+                    )
+                    PlayerButton(
+                        icon = Icons.Rounded.CenterFocusWeak,
+                        size = 36.dp,
+                        enabled = enabled,
+                        alpha = alpha,
                         onClick = debouncedAction(waitMillis = 100) { state.scrollToActiveItem() },
-                        enabled = state.isThereActiveItem.value,
-                        modifier = Modifier.alpha(alpha).padding(start = 8.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.CenterFocusWeak,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(36.dp)
-                                .background(ColorAccent, CircleShape),
-                            tint = ColorAccentContent,
-                        )
-                    }
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RowScope.PlayerButton(
+    icon: ImageVector,
+    size: Dp,
+    enabled: Boolean,
+    alpha: Float,
+    onClick: () -> Unit,
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .weight(1f)
+            .wrapContentWidth()
+            .alpha(alpha)
+            .size(size)
+            .clip(CircleShape)
+            .background(ColorAccent)
+            .clickable(enabled = enabled, onClick = onClick)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = ColorAccentContent,
+            modifier = Modifier.size(size * 0.65f)
+        )
     }
 }

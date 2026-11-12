@@ -25,6 +25,10 @@ import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.DoneOutline
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RemoveDone
@@ -47,7 +51,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -73,6 +76,7 @@ import my.noveldoksuha.coreui.components.AppSearchTextField
 import kotlinx.coroutines.launch
 import my.nanihadesuka.compose.InternalLazyColumnScrollbar
 import my.noveldoksuha.coreui.theme.ColorAccent
+import my.noveldoksuha.coreui.theme.ColorAccentContent
 import my.noveldoksuha.coreui.theme.ColorLike
 import my.noveldoksuha.coreui.theme.ColorNotice
 import my.noveldoksuha.coreui.theme.colorApp
@@ -415,49 +419,63 @@ internal fun ChaptersScreen(
         },
         floatingActionButton = {
             val coroutineScope = rememberCoroutineScope()
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            val showScrollToTop by remember {
+                derivedStateOf { lazyListState.firstVisibleItemIndex > 1 }
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Scroll to current chapter (where user is currently at)
-                SmallFloatingActionButton(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                // Compact navigation pill: scroll to top / current / last read
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    onClick = {
-                        val index = state.filteredChapters.value.indexOfFirst { it.lastReadChapter }
-                        if (index >= 0) {
-                            coroutineScope.launch {
-                                lazyListState.animateScrollToItem(index + 1)
+                    tonalElevation = 3.dp,
+                    shadowElevation = 3.dp,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    ) {
+                        AnimatedVisibility(visible = showScrollToTop) {
+                            IconButton(onClick = {
+                                coroutineScope.launch { lazyListState.animateScrollToItem(0) }
+                            }) {
+                                Icon(
+                                    Icons.Filled.ArrowUpward,
+                                    contentDescription = stringResource(id = R.string.scroll_to_top)
+                                )
                             }
                         }
-                    }
-                ) {
-                    Icon(
-                        Icons.Filled.MyLocation,
-                        contentDescription = stringResource(id = R.string.scroll_to_current_chapter)
-                    )
-                }
-                // Scroll to the last chapter marked as read
-                SmallFloatingActionButton(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    onClick = {
-                        val index = state.filteredChapters.value.indexOfLast { it.chapter.read }
-                        if (index >= 0) {
-                            coroutineScope.launch {
-                                lazyListState.animateScrollToItem(index + 1)
+                        IconButton(onClick = {
+                            val index = state.filteredChapters.value.indexOfFirst { it.lastReadChapter }
+                            if (index >= 0) {
+                                coroutineScope.launch { lazyListState.animateScrollToItem(index + 1) }
                             }
+                        }) {
+                            Icon(
+                                Icons.Filled.MyLocation,
+                                contentDescription = stringResource(id = R.string.scroll_to_current_chapter)
+                            )
+                        }
+                        IconButton(onClick = {
+                            val index = state.filteredChapters.value.indexOfLast { it.chapter.read }
+                            if (index >= 0) {
+                                coroutineScope.launch { lazyListState.animateScrollToItem(index + 1) }
+                            }
+                        }) {
+                            Icon(
+                                Icons.Filled.Bookmarks,
+                                contentDescription = stringResource(id = R.string.scroll_to_last_read_chapter)
+                            )
                         }
                     }
-                ) {
-                    Icon(
-                        Icons.Filled.Bookmarks,
-                        contentDescription = stringResource(id = R.string.scroll_to_last_read_chapter)
-                    )
                 }
                 // Resume reading
                 FloatingActionButton(
                     containerColor = ColorAccent,
+                    contentColor = ColorAccentContent,
                     onClick = onResumeReading
                 ) {
                     Row(
@@ -468,7 +486,7 @@ internal fun ChaptersScreen(
                         Icon(
                             Icons.Filled.PlayArrow,
                             contentDescription = stringResource(id = R.string.open_last_read_chapter),
-                            tint = Color.White
+                            tint = ColorAccentContent
                         )
                         AnimatedVisibility(visible = lazyListState.isAtTop(threshold = 100.dp).value) {
                             Text(

@@ -1,8 +1,6 @@
 package my.noveldokusha.settings.sections
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -15,7 +13,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import my.noveldokusha.settings.R
-import my.noveldoksuha.coreui.theme.AppElevation
+import androidx.compose.foundation.clickable
+import my.noveldoksuha.coreui.components.SettingsSectionTitle
+import my.noveldoksuha.coreui.theme.ColorAccent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,137 +30,74 @@ fun ScraperTestingSection(
     onTestIndividualDatabase: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier.padding(16.dp)
-    ) {
-        Text(
-            text = stringResource(R.string.scraper_testing_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
+    val onPrimary = MaterialTheme.colorScheme.onPrimary
+    Column(modifier = modifier.fillMaxWidth()) {
+        SettingsSectionTitle(text = stringResource(R.string.scraper_testing_title))
+
+        ListItem(
+            headlineContent = { Text("Test all sources & databases") },
+            supportingContent = { Text("Run a connectivity check on every scraper") },
+            leadingContent = {
+                if (isTestingInProgress) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                } else {
+                    Icon(Icons.Default.PlayArrow, null, tint = onPrimary)
+                }
+            },
+            modifier = Modifier.clickable(enabled = !isTestingInProgress, onClick = onTestAll)
         )
-
-        // Testing Controls
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Button(
-                onClick = onTestSources,
-                enabled = !isTestingInProgress,
-                modifier = Modifier.weight(1f)
-            ) {
-                if (isTestingInProgress) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Test Sources")
-            }
-
-            Button(
-                onClick = onTestDatabases,
-                enabled = !isTestingInProgress,
-                modifier = Modifier.weight(1f)
-            ) {
-                if (isTestingInProgress) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Test DBs")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Button(
-            onClick = onTestAll,
-            enabled = !isTestingInProgress,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            )
-        ) {
-            Text("Test All Sources & Databases")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
+        ListItem(
+            headlineContent = { Text("Test sources only") },
+            leadingContent = { Icon(Icons.Default.Language, null, tint = onPrimary) },
+            modifier = Modifier.clickable(enabled = !isTestingInProgress, onClick = onTestSources)
+        )
+        ListItem(
+            headlineContent = { Text("Test databases only") },
+            leadingContent = { Icon(Icons.Default.Storage, null, tint = onPrimary) },
+            modifier = Modifier.clickable(enabled = !isTestingInProgress, onClick = onTestDatabases)
+        )
 
         // Results Section
         if (sources.isNotEmpty() || databases.isNotEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = AppElevation.card)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
+                TestSummary(sources = sources, databases = databases)
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (sources.isNotEmpty()) {
                     Text(
-                        text = "Test Results",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
+                        text = "Sources (${sources.size})",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = ColorAccent,
+                        modifier = Modifier.padding(vertical = 6.dp)
                     )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Summary Statistics
-                    TestSummary(sources = sources, databases = databases)
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Sources Results
-                    if (sources.isNotEmpty()) {
-                        Text(
-                            text = "Sources (${sources.size})",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Medium
+                    sources.forEach { result ->
+                        DetailedTestResultItem(
+                            result = result,
+                            onTestIndividual = { onTestIndividualSource(result.id) },
+                            isTestingInProgress = isTestingInProgress
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        sources.forEach { result ->
-                            DetailedTestResultItem(
-                                result = result,
-                                onTestIndividual = { onTestIndividualSource(result.id) },
-                                isTestingInProgress = isTestingInProgress
-                            )
-                        }
-                        
-                        Spacer(modifier = Modifier.height(12.dp))
                     }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
 
-                    // Databases Results
-                    if (databases.isNotEmpty()) {
-                        Text(
-                            text = "Databases (${databases.size})",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Medium
+                if (databases.isNotEmpty()) {
+                    Text(
+                        text = "Databases (${databases.size})",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = ColorAccent,
+                        modifier = Modifier.padding(vertical = 6.dp)
+                    )
+                    databases.forEach { result ->
+                        DetailedTestResultItem(
+                            result = result,
+                            onTestIndividual = { onTestIndividualDatabase(result.id) },
+                            isTestingInProgress = isTestingInProgress
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        databases.forEach { result ->
-                            DetailedTestResultItem(
-                                result = result,
-                                onTestIndividual = { onTestIndividualDatabase(result.id) },
-                                isTestingInProgress = isTestingInProgress
-                            )
-                        }
                     }
                 }
             }
@@ -233,8 +170,10 @@ private fun DetailedTestResultItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 2.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = AppElevation.card),
-        shape = RoundedCornerShape(8.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        shape = RoundedCornerShape(12.dp)
     ) {
         Column(
             modifier = Modifier.padding(12.dp)
@@ -260,7 +199,7 @@ private fun DetailedTestResultItem(
                         tint = when (result.status) {
                             TestStatus.SUCCESS -> Color(0xFF4CAF50)
                             TestStatus.ERROR -> Color(0xFFF44336)
-                            TestStatus.TESTING -> MaterialTheme.colorScheme.primary
+                            TestStatus.TESTING -> ColorAccent
                             TestStatus.NOT_TESTED -> MaterialTheme.colorScheme.onSurfaceVariant
                         },
                         modifier = Modifier.size(20.dp)
@@ -292,7 +231,7 @@ private fun DetailedTestResultItem(
                             Icons.Default.HourglassEmpty else Icons.Default.PlayArrow,
                         contentDescription = "Test this source",
                         tint = if (result.status == TestStatus.TESTING) 
-                            MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            ColorAccent else MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -366,7 +305,7 @@ private fun DetailedTestResultItem(
                         color = when (result.status) {
                             TestStatus.SUCCESS -> Color(0xFF4CAF50)
                             TestStatus.ERROR -> Color(0xFFF44336)
-                            TestStatus.TESTING -> MaterialTheme.colorScheme.primary
+                            TestStatus.TESTING -> ColorAccent
                             TestStatus.NOT_TESTED -> MaterialTheme.colorScheme.onSurfaceVariant
                         },
                         fontWeight = FontWeight.Medium
@@ -401,7 +340,7 @@ private fun DetailRow(
             tint = when (status) {
                 TestStatus.SUCCESS -> Color(0xFF4CAF50)
                 TestStatus.ERROR -> Color(0xFFF44336)
-                TestStatus.TESTING -> MaterialTheme.colorScheme.primary
+                TestStatus.TESTING -> ColorAccent
                 TestStatus.NOT_TESTED -> MaterialTheme.colorScheme.onSurfaceVariant
             },
             modifier = Modifier.size(16.dp)

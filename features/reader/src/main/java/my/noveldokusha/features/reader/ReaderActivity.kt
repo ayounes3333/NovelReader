@@ -114,7 +114,13 @@ class ReaderActivity : BaseActivity() {
     private val fontsLoader = FontsLoader()
 
     override fun onBackPressed() {
-        viewModel.onCloseManually()
+        if (viewModel.readerSpeaker.isActive.value) {
+            // Keep the session (and its foreground service) alive so narration
+            // continues while the user browses the rest of the app.
+            android.widget.Toast.makeText(this, R.string.narration_continues_in_background, android.widget.Toast.LENGTH_SHORT).show()
+        } else {
+            viewModel.onCloseManually()
+        }
         super.onBackPressed()
     }
 

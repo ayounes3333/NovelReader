@@ -44,6 +44,7 @@ class AiChatActivity : BaseActivity() {
                     isConfigured = viewModel.isConfigured,
                     isSending = viewModel.isSending,
                     activity = viewModel.activity,
+                    streamingText = viewModel.streamingText,
                     error = viewModel.error,
                     fallbackNotice = viewModel.fallbackNotice,
                     webSearchEnabled = viewModel.webSearchEnabled.value,

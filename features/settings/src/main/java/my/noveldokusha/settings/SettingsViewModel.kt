@@ -57,6 +57,7 @@ internal class SettingsViewModel @Inject constructor(
         imageFolderSize = stateHandle.asMutableStateOf("imageFolderSize") { "" },
         followsSystemTheme = appPreferences.THEME_FOLLOW_SYSTEM.state(viewModelScope),
         currentTheme = derivedStateOf { themeId.toTheme },
+        accentColor = appPreferences.THEME_ACCENT_COLOR.state(viewModelScope),
         isTranslationSettingsVisible = mutableStateOf(translationManager.available),
         translationModelsStates = translationManager.models,
         updateAppSetting = SettingsScreenState.UpdateApp(
@@ -119,6 +120,10 @@ internal class SettingsViewModel @Inject constructor(
 
     fun onFollowSystemChange(follow: Boolean) {
         appPreferences.THEME_FOLLOW_SYSTEM.value = follow
+    }
+
+    fun onAccentColorChange(argb: Int) {
+        appPreferences.THEME_ACCENT_COLOR.value = argb
     }
 
     fun onThemeChange(themes: Themes) {

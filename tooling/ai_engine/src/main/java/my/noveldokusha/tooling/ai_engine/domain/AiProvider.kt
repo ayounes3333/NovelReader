@@ -34,4 +34,14 @@ interface AiProvider {
      * [Response.Error] so callers can fall back to a text protocol.
      */
     suspend fun chat(request: AiChatRequest): Response<AiChatResult>
+
+    /**
+     * Like [chat] but streams the assistant text as it is generated through
+     * [onDelta]. The returned result contains the complete message. Providers
+     * without streaming support fall back to [chat] and emit nothing.
+     */
+    suspend fun chatStream(
+        request: AiChatRequest,
+        onDelta: suspend (String) -> Unit,
+    ): Response<AiChatResult> = chat(request)
 }

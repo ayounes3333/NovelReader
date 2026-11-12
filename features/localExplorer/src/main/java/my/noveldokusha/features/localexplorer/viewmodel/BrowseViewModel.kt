@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import my.noveldokusha.feature.local_database.tables.localexplorer.NovelFileInfo
 import my.noveldokusha.features.localexplorer.BrowseScreenState
 import my.noveldokusha.features.localexplorer.FileManager
 import my.noveldokusha.features.localexplorer.model.Browsable
@@ -67,6 +69,42 @@ class BrowseViewModel @Inject constructor (private val browseRepository: BrowseR
 
     init {
         browse(FileManager.getCurrentDirectory())
+    }
+
+    fun toggleFavorite(novelFileInfo: NovelFileInfo) {
+        val newValue = !novelFileInfo.isFavorite
+        novelFileInfo.isFavorite = newValue
+        updateBrowsables { list ->
+            list.map { item ->
+                if (item.novelFileInfo?.id == novelFileInfo.id) {
+                    Browsable(item.file, item.novelFileInfo.also { it.isFavorite = newValue })
+                } else item
+            }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            browseRepository.setFavorite(novelFileInfo, newValue)
+        }
+    }
+
+    fun deleteFile(novelFileInfo: NovelFileInfo) {
+        viewModelScope.launch {
+            val deleted = withContext(Dispatchers.IO) { browseRepository.deleteFile(novelFileInfo) }
+            if (deleted) {
+                updateBrowsables { list -> list.filter { it.novelFileInfo?.id != novelFileInfo.id } }
+            }
+        }
+    }
+
+    private fun updateBrowsables(transform: (List<Browsable>) -> List<Browsable>) {
+        uiState = when (val state = uiState) {
+            is BrowseScreenState.Data -> BrowseScreenState.Data(
+                state.data.copy(browsable = transform(state.data.browsable))
+            )
+            is BrowseScreenState.Loading -> state.data?.let {
+                BrowseScreenState.Loading(it.copy(browsable = transform(it.browsable)))
+            } ?: state
+            else -> state
+        }
     }
 
     fun browse(directory: File?, query: String = "") {

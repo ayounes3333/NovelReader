@@ -2,6 +2,7 @@ package my.noveldoksuha.coreui
 
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.CoroutineScope
 import my.noveldoksuha.coreui.mappers.toTheme
 import my.noveldoksuha.coreui.theme.ThemeProvider
@@ -21,5 +22,9 @@ internal class AppThemeProvider @Inject constructor(
 
     override fun currentTheme(stateCoroutineScope: CoroutineScope): State<Themes> = derivedStateOf {
         appPreferences.THEME_ID.state(stateCoroutineScope).value.toTheme
+    }
+
+    override fun accentColor(stateCoroutineScope: CoroutineScope): State<Color> = derivedStateOf {
+        Color(appPreferences.THEME_ACCENT_COLOR.state(stateCoroutineScope).value)
     }
 }

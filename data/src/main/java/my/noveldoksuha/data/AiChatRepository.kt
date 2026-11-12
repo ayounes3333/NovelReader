@@ -71,6 +71,7 @@ class AiChatRepository @Inject constructor(
         text: String,
         onEvent: suspend (AiAgentEvent) -> Unit = {},
         onStepLimit: suspend (stepsUsed: Int) -> StepLimitDecision = { StepLimitDecision.ANSWER_NOW },
+        onDelta: suspend (String) -> Unit = {},
     ): Response<String> {
         if (!isConfigured()) {
             return Response.Error(
@@ -108,6 +109,7 @@ class AiChatRepository @Inject constructor(
             maxSteps = appPreferences.AI_CHAT_MAX_STEPS.value,
             onEvent = onEvent,
             onStepLimit = onStepLimit,
+            onDelta = onDelta,
             // Persist as we go so tool activity stays visible even if the run fails.
             onMessage = { dao.insert(listOf(it.toRow(context.bookUrl))) },
         )

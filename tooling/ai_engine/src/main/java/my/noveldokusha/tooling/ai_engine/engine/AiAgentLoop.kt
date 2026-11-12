@@ -29,6 +29,9 @@ sealed interface AiAgentEvent {
     data class ToolCallStarted(val call: AiToolCall) : AiAgentEvent
     data class ToolCallFinished(val call: AiToolCall, val resultPreview: String) : AiAgentEvent
     data class FallbackToTextProtocol(val reason: String) : AiAgentEvent
+
+    /** A new model round-trip begins; any streamed text so far belongs to the previous one. */
+    data object ModelCallStarted : AiAgentEvent
 }
 
 /** What to do when the tool step budget is exhausted. */
@@ -68,6 +71,9 @@ class AiAgentLoop(
      *   callers can persist partial progress even if the run later fails.
      * @param onStepLimit consulted when [maxSteps] is reached; may suspend
      *   (e.g. to ask the user). Defaults to answering immediately.
+     * @param onDelta receives streamed fragments of the assistant's text for
+     *   each model call; callers should reset their buffer on
+     *   [AiAgentEvent.ModelCallStarted].
      */
     suspend fun run(
         provider: AiProvider,
@@ -80,6 +86,7 @@ class AiAgentLoop(
         onMessage: suspend (AiChatMessage) -> Unit = {},
         onStepLimit: suspend (stepsUsed: Int) -> StepLimitDecision = { StepLimitDecision.ANSWER_NOW },
         onEvent: suspend (AiAgentEvent) -> Unit = {},
+        onDelta: suspend (String) -> Unit = {},
     ): Response<AiAgentRun> {
         val toolsByName = tools.associateBy { it.spec.name }
         val specs = tools.map { it.spec }
@@ -109,28 +116,31 @@ class AiAgentLoop(
             step++
 
             val conversation = history + produced
+            onEvent(AiAgentEvent.ModelCallStarted)
             val result = if (useTextProtocol || forceAnswer) {
                 val prompt = when {
                     forceAnswer -> systemPrompt + FORCE_ANSWER_INSTRUCTIONS
                     tools.isEmpty() -> systemPrompt
                     else -> systemPrompt + TextToolProtocol.instructions(specs)
                 }
-                provider.chat(
+                provider.chatStream(
                     AiChatRequest(
                         model = model,
                         messages = listOf(AiChatMessage.system(prompt)) +
                                 TextToolProtocol.flattenHistory(conversation),
                         temperature = temperature,
-                    )
+                    ),
+                    onDelta = onDelta,
                 )
             } else {
-                val native = provider.chat(
+                val native = provider.chatStream(
                     AiChatRequest(
                         model = model,
                         messages = listOf(AiChatMessage.system(systemPrompt)) + conversation,
                         tools = specs,
                         temperature = temperature,
-                    )
+                    ),
+                    onDelta = onDelta,
                 )
                 if (native is Response.Error && looksLikeToolsUnsupported(native.message)) {
                     useTextProtocol = true

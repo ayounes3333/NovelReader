@@ -59,8 +59,9 @@ class AiAgentLoopTest {
         val provider = ScriptedProvider(mutableListOf(reply("", listOf(call)), reply("done")))
         val events = mutableListOf<AiAgentEvent>()
         val result = AiAgentLoop().run(
-            provider, "m", "sys", listOf(AiChatMessage.user("hi")), listOf(echoTool)
-        ) { events += it }
+            provider, "m", "sys", listOf(AiChatMessage.user("hi")), listOf(echoTool),
+            onEvent = { events += it },
+        )
         val run = (result as Response.Success).data
 
         assertEquals("done", run.finalAnswer)
@@ -83,8 +84,9 @@ class AiAgentLoopTest {
         )
         val events = mutableListOf<AiAgentEvent>()
         val result = AiAgentLoop().run(
-            provider, "m", "sys", listOf(AiChatMessage.user("hi")), listOf(echoTool)
-        ) { events += it }
+            provider, "m", "sys", listOf(AiChatMessage.user("hi")), listOf(echoTool),
+            onEvent = { events += it },
+        )
         val run = (result as Response.Success).data
 
         assertEquals("final", run.finalAnswer)

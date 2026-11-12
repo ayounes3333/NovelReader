@@ -14,6 +14,7 @@
     <string name="database_size">Database size:</string>
     <string name="backup">Backup</string>
     <string name="theme">Theme</string>
+    <string name="theme_accent_color">Accent color</string>
     <string name="data">Data</string>
     <string name="clean_database">Clean database</string>
     <string name="preserve_only_library_books_data">Preserve only library books data</string>
@@ -98,6 +99,8 @@
     <string name="select_all_chapters">Select all chapters</string>
     <string name="close_selection_bar">Close selection bar</string>
     <string name="open_last_read_chapter">Open last read chapter</string>
+    <string name="scroll_to_top">Scroll to top</string>
+    <string name="narration_continues_in_background">Narration continues in the background</string>
     <string name="scroll_to_current_chapter">Scroll to current chapter</string>
     <string name="scroll_to_last_read_chapter">Scroll to last read chapter</string>
     <string name="updating_book_info">Updating book info</string>
@@ -270,6 +273,7 @@
     <string name="translator">Translator</string>
     <string name="voice_reader">Voice reader</string>
     <string name="more">More</string>
+    <string name="open_in_web">Open chapter in browser</string>
     <string name="style">Style</string>
     <string name="saved_voices">Saved voices</string>
     <string name="no_voices_saved">No voices saved</string>

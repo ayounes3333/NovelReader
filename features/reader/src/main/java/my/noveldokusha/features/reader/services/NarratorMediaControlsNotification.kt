@@ -76,7 +76,12 @@ internal class NarratorMediaControlsNotification @Inject constructor(
             val mediaMetadata = MediaMetadataCompat.Builder().putLong(MediaMetadataCompat.METADATA_KEY_DURATION, -1L).build()
             it.setMetadata(mediaMetadata)
 
-            it.setCallback(NarratorMediaControlsCallback(readerSession.readerTextToSpeech))
+            it.setCallback(
+                NarratorMediaControlsCallback(
+                    readerTextToSpeech = readerSession.readerTextToSpeech,
+                    onStopRequested = { readerManager.close() },
+                )
+            )
             mediaSession = it
         }
 

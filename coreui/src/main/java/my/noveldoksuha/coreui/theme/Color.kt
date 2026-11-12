@@ -2,13 +2,21 @@
 
 package my.noveldoksuha.coreui.theme
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 
-// Brand accent — Material You Indigo/Violet
-val ColorAccent = Color(0xFF6650A4)
+/** User-selectable app accent color (see `THEME_ACCENT_COLOR`). */
+val ColorAccent: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAppColor.current.accent
 
 /** Content color for text/icons placed on top of [ColorAccent]. */
-val ColorAccentContent = Color.White
+val ColorAccentContent: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAppColor.current.onAccent
 
 val ColorLike = Color(0xFFE53935)
 val ColorNotice = Color(0xFFE48800)

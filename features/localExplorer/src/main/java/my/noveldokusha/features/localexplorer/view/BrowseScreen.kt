@@ -56,8 +56,25 @@ import my.noveldoksuha.coreui.components.Loading
 import my.noveldoksuha.coreui.components.LoadingSnackbar
 import my.noveldoksuha.coreui.components.NoData
 import my.noveldoksuha.coreui.components.OnLifecycleEvent
-import my.noveldokusha.ui.composeViews.SearchBar
 import my.noveldoksuha.coreui.components.Viewing
+import my.noveldoksuha.coreui.theme.ColorAccent
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 
 import my.noveldokusha.features.localexplorer.BrowseScreenState
 import my.noveldokusha.features.localexplorer.FileManager
@@ -70,6 +87,9 @@ import my.noveldokusha.features.localexplorer.extractor.utils.content
 import my.noveldokusha.features.localexplorer.viewmodel.BrowseData
 import my.noveldokusha.features.localexplorer.viewmodel.BrowseViewModel
 import java.io.File
+
+// Strips the legacy " - " prefix produced by older metadata extraction.
+fun String.cleanBookTitle(): String = trimStart().removePrefix("-").trimStart()
 
 // Utility function to truncate text in the middle, showing start and end
 fun String.truncateMiddle(maxLength: Int = 40): String {
@@ -100,9 +120,12 @@ fun BrowseScreen(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(100.dp)
-                    .background(MaterialTheme.colorScheme.primary, shape = MaterialTheme.shapes.small)
+                    .background(
+                        MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = MaterialTheme.shapes.medium
+                    )
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = ColorAccent)
             }
         }
     }
@@ -127,23 +150,21 @@ fun BrowseScreen(
     }
 
     Column {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(8.dp)) {
-            SearchBar(
-                modifier = Modifier.weight(1f, false),
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+        ) {
+            BrowseSearchField(
+                modifier = Modifier.weight(1f),
                 query = viewModel.query.value,
                 onQueryChange = {
                     viewModel.setSearchText(it)
-                    if (it.isEmpty()) {
-                        viewModel.clearSearch()
-                    } else {
-                        viewModel.search() // This now uses debounced search
-                    }
+                    if (it.isEmpty()) viewModel.clearSearch() else viewModel.search()
                 },
-                onDone = { viewModel.search() },
-                onSearchFocusChange = viewModel::setSearchFocused,
-                onClearQuery = { viewModel.clearSearch() },
-                onBack = { viewModel.clearSearch() },
-                focused = viewModel.searchFocused.value
+                onClear = { viewModel.clearSearch() },
+                onFocusChange = viewModel::setSearchFocused,
             )
             Viewing(tint = MaterialTheme.colorScheme.onPrimary, viewing = viewing) {
                 viewing = it
@@ -157,12 +178,17 @@ fun BrowseScreen(
                 }
 
                 is BrowseScreenState.Data -> {
-                    Files(viewing = viewing, browseData = uiState.data, onBookClick = { file ->
-                        showDialog = true
-                        onBookClick(file)
-                    }) {
-                        viewModel.browse(it)
-                    }
+                    Files(
+                        viewing = viewing,
+                        browseData = uiState.data,
+                        onBookClick = { file ->
+                            showDialog = true
+                            onBookClick(file)
+                        },
+                        onToggleFavorite = viewModel::toggleFavorite,
+                        onDelete = viewModel::deleteFile,
+                        folderClicked = { viewModel.browse(it) }
+                    )
                 }
 
                 is BrowseScreenState.Error -> {
@@ -179,12 +205,18 @@ fun BrowseScreen(
                     if (uiState.data?.browsable.isNullOrEmpty())
                         Loading()
                     else
-                        Files(viewing = viewing, browseData = uiState.data!!, true, { file ->
-                            showDialog = true
-                            onBookClick(file)
-                        }) {
-                            viewModel.browse(it)
-                        }
+                        Files(
+                            viewing = viewing,
+                            browseData = uiState.data!!,
+                            isLoading = true,
+                            onBookClick = { file ->
+                                showDialog = true
+                                onBookClick(file)
+                            },
+                            onToggleFavorite = viewModel::toggleFavorite,
+                            onDelete = viewModel::deleteFile,
+                            folderClicked = { viewModel.browse(it) }
+                        )
                 }
             }
         }
@@ -313,10 +345,23 @@ fun Files(
     browseData: BrowseData,
     isLoading: Boolean = false,
     onBookClick: (file: File) -> Unit,
+    onToggleFavorite: (NovelFileInfo) -> Unit = {},
+    onDelete: (NovelFileInfo) -> Unit = {},
     folderClicked: (file: File) -> Unit
 ) {
     val snackbarHostState = remember {
         SnackbarHostState()
+    }
+    var pendingDelete by remember { mutableStateOf<NovelFileInfo?>(null) }
+    pendingDelete?.let { target ->
+        DeleteFileDialog(
+            title = target.title.cleanBookTitle(),
+            onDismiss = { pendingDelete = null },
+            onConfirm = {
+                onDelete(target)
+                pendingDelete = null
+            }
+        )
     }
     Box(modifier = Modifier.fillMaxSize()) {
         LaunchedEffect(key1 = isLoading) {
@@ -334,10 +379,11 @@ fun Files(
                 when (viewing) {
                     Viewing.LIST -> {
                         LazyColumn(
-                            modifier = Modifier.padding(8.dp)
+                            contentPadding = PaddingValues(vertical = 4.dp)
                         ) {
                             items(
                                 count = browseData.browsable.size,
+                                key = { index -> browseData.browsable[index].file.absolutePath },
                                 contentType = { index ->
                                     if (browseData.browsable[index].isDirectory) "folder" else "book"
                                 }
@@ -351,7 +397,9 @@ fun Files(
                                 } else {
                                     NovelFileListItem(
                                         novelFileInfo = item.novelFileInfo!!,
-                                        onBookClick = onBookClick
+                                        onBookClick = onBookClick,
+                                        onToggleFavorite = onToggleFavorite,
+                                        onDelete = { pendingDelete = it }
                                     )
                                 }
                             }
@@ -379,7 +427,9 @@ fun Files(
                                 } else {
                                     NovelFileGridItem(
                                         novelFileInfo = item.novelFileInfo!!,
-                                        onBookClick = onBookClick
+                                        onBookClick = onBookClick,
+                                        onToggleFavorite = onToggleFavorite,
+                                        onDelete = { pendingDelete = it }
                                     )
                                 }
                             }
@@ -407,100 +457,44 @@ fun FilesHeader(
             parentClicked(parents.last())
         }
     }
+    val currentDir = FileManager.getCurrentDirectory()
+    val crumbs = remember(parents, currentDir) {
+        val list = parents.drop(1) // first parent is storage root (shown as the home icon)
+        if (currentDir != null && parents.isNotEmpty()) list + currentDir else list
+    }
+    val listState = rememberLazyListState()
+    LaunchedEffect(crumbs.size) {
+        if (crumbs.isNotEmpty()) listState.animateScrollToItem(crumbs.lastIndex)
+    }
 
-    Column(
+    LazyRow(
+        state = listState,
         modifier = Modifier
-            .background(
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                shape = MaterialTheme.shapes.extraSmall
-            )
             .fillMaxWidth()
-            .padding(8.dp)
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // First row with home icon and root
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(
-                modifier = Modifier
-                    .padding(end = 8.dp)
-                    .clickable { parentClicked(FileManager.getStorageRoot()!!) },
-                painter = painterResource(id = R.drawable.ic_home_black_24dp),
-                contentDescription = "Home",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = "Storage Root",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.clickable { parentClicked(FileManager.getStorageRoot()!!) }
+        item {
+            BreadcrumbChip(
+                text = "Storage",
+                icon = ImageVector.vectorResource(R.drawable.ic_home_black_24dp),
+                selected = crumbs.isEmpty(),
+                onClick = { FileManager.getStorageRoot()?.let(parentClicked) }
             )
         }
-
-        // Path breadcrumbs - show all parents in a flowable layout
-        if (parents.isNotEmpty()) {
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                items(parents.size) { index ->
-                    val parent = parents[index]
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.baseline_chevron_right_24),
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                        Text(
-                            text = parent.name,
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier
-                                .padding(horizontal = 4.dp)
-                                .clickable { parentClicked.invoke(parent) }
-                                .background(
-                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
-                                    MaterialTheme.shapes.extraSmall
-                                )
-                                .padding(horizontal = 8.dp, vertical = 2.dp),
-                            maxLines = 1
-                        )
-                    }
-                }
-            }
-        }
-
-        // Current directory
-        val currentDir = FileManager.getCurrentDirectory()
-        if (currentDir != null) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp)
-            ) {
+        items(crumbs.size) { index ->
+            val crumb = crumbs[index]
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = ImageVector.vectorResource(R.drawable.baseline_chevron_right_24),
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
-                Text(
-                    text = currentDir.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier
-                        .padding(horizontal = 4.dp)
-                        .background(
-                            MaterialTheme.colorScheme.primaryContainer,
-                            MaterialTheme.shapes.extraSmall
-                        )
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                BreadcrumbChip(
+                    text = crumb.name,
+                    selected = index == crumbs.lastIndex,
+                    onClick = { if (index != crumbs.lastIndex) parentClicked(crumb) }
                 )
             }
         }
@@ -508,7 +502,144 @@ fun FilesHeader(
 }
 
 @Composable
-fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) -> Unit) {
+private fun BreadcrumbChip(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    icon: ImageVector? = null,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(
+                if (selected) ColorAccent.copy(alpha = 0.18f)
+                else MaterialTheme.colorScheme.surfaceContainerHigh
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+    ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(16.dp)
+                    .padding(end = 2.dp),
+                tint = if (selected) ColorAccent else MaterialTheme.colorScheme.onSurface
+            )
+        }
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (selected) ColorAccent else MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = 160.dp)
+        )
+    }
+}
+
+@Composable
+private fun BrowseSearchField(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onClear: () -> Unit,
+    onFocusChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .height(40.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .padding(horizontal = 12.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Search,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 8.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            if (query.isEmpty()) {
+                Text(
+                    text = "Search files",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            BasicTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                cursorBrush = SolidColor(ColorAccent),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                }),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { onFocusChange(it.isFocused) }
+            )
+        }
+        if (query.isNotEmpty()) {
+            Icon(
+                imageVector = Icons.Filled.Close,
+                contentDescription = "Clear",
+                modifier = Modifier
+                    .size(18.dp)
+                    .clickable {
+                        onClear()
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                    },
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun DeleteFileDialog(
+    title: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Delete file?") },
+        text = { Text("\"$title\" will be permanently removed from the device.") },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Delete", color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+fun NovelFileListItem(
+    novelFileInfo: NovelFileInfo,
+    onBookClick: (file: File) -> Unit,
+    onToggleFavorite: (NovelFileInfo) -> Unit = {},
+    onDelete: (NovelFileInfo) -> Unit = {},
+) {
     // Load cover asynchronously to prevent UI freeze
     var novelCover by remember(novelFileInfo.path) {
         mutableStateOf<my.noveldokusha.feature.local_database.tables.localexplorer.Cover?>(
@@ -532,11 +663,12 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
 
     Row(
         modifier = Modifier
-            .clickable { onBookClick(File(novelFileInfo.path)) }
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-            .background(MaterialTheme.colorScheme.surfaceContainer, MaterialTheme.shapes.small)
-            .padding(4.dp),
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .clickable { onBookClick(File(novelFileInfo.path)) }
+            .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Cover image with placeholder
@@ -566,7 +698,8 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
             ) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
-                    strokeWidth = 2.dp
+                    strokeWidth = 2.dp,
+                    color = ColorAccent
                 )
             }
         }
@@ -578,7 +711,7 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
                 .padding(horizontal = 8.dp)
         ) {
             Text(
-                text = novelFileInfo.title.truncateMiddle(75),
+                text = novelFileInfo.title.cleanBookTitle().truncateMiddle(75),
                 style = MaterialTheme.typography.titleSmall,
                 maxLines = 3,
                 color = MaterialTheme.colorScheme.onSurface
@@ -606,7 +739,7 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
                     Text(
                         text = progressText,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = ColorAccent,
                         modifier = Modifier.padding(start = 8.dp)
                     )
                 }
@@ -619,12 +752,12 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
                             id = if (novelFileInfo.isFavorite) R.drawable.ic_star else R.drawable.ic_star_border
                         ),
                         contentDescription = "Favorite",
-                        tint = if (novelFileInfo.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(
+                        tint = if (novelFileInfo.isFavorite) ColorAccent else MaterialTheme.colorScheme.onSurface.copy(
                             alpha = 0.6f
                         ),
                         modifier = Modifier
                             .size(24.dp)
-                            .clickable { /* Handle favorite toggle */ }
+                            .clickable { onToggleFavorite(novelFileInfo) }
                             .padding(vertical = 4.dp)
                     )
 
@@ -634,7 +767,7 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
                         tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         modifier = Modifier
                             .size(24.dp)
-                            .clickable { /* Handle delete */ }
+                            .clickable { onDelete(novelFileInfo) }
                             .padding(vertical = 4.dp)
                     )
                 }
@@ -644,7 +777,12 @@ fun NovelFileListItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
 }
 
 @Composable
-fun NovelFileGridItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) -> Unit) {
+fun NovelFileGridItem(
+    novelFileInfo: NovelFileInfo,
+    onBookClick: (file: File) -> Unit,
+    onToggleFavorite: (NovelFileInfo) -> Unit = {},
+    onDelete: (NovelFileInfo) -> Unit = {},
+) {
     // Load cover asynchronously to prevent UI freeze
     var novelCover by remember(novelFileInfo.path) {
         mutableStateOf<my.noveldokusha.feature.local_database.tables.localexplorer.Cover?>(
@@ -696,7 +834,8 @@ fun NovelFileGridItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
             ) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(32.dp),
-                    strokeWidth = 3.dp
+                    strokeWidth = 3.dp,
+                    color = ColorAccent
                 )
             }
         }
@@ -727,7 +866,7 @@ fun NovelFileGridItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
         ) {
             // Title
             Text(
-                text = novelFileInfo.title.truncateMiddle(30),
+                text = novelFileInfo.title.cleanBookTitle().truncateMiddle(30),
                 style = MaterialTheme.typography.titleSmall,
                 maxLines = 2,
                 color = androidx.compose.ui.graphics.Color.White
@@ -751,7 +890,7 @@ fun NovelFileGridItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
                     Text(
                         text = progressText,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
+                        color = ColorAccent
                     )
                 }
 
@@ -765,12 +904,12 @@ fun NovelFileGridItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
                             id = if (novelFileInfo.isFavorite) R.drawable.ic_star else R.drawable.ic_star_border
                         ),
                         contentDescription = "Favorite",
-                        tint = if (novelFileInfo.isFavorite) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.White.copy(
+                        tint = if (novelFileInfo.isFavorite) ColorAccent else androidx.compose.ui.graphics.Color.White.copy(
                             alpha = 0.8f
                         ),
                         modifier = Modifier
                             .size(16.dp)
-                            .clickable { /* Handle favorite toggle */ }
+                            .clickable { onToggleFavorite(novelFileInfo) }
                     )
 
                     Icon(
@@ -779,7 +918,7 @@ fun NovelFileGridItem(novelFileInfo: NovelFileInfo, onBookClick: (file: File) ->
                         tint = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.8f),
                         modifier = Modifier
                             .size(16.dp)
-                            .clickable { /* Handle delete */ }
+                            .clickable { onDelete(novelFileInfo) }
                     )
                 }
             }

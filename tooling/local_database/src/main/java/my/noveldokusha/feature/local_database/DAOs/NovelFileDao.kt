@@ -26,6 +26,12 @@ interface NovelFileDao {
     @Query("DELETE FROM " + NovelFileInfo.TABLE_NAME + " WHERE id = :id")
     suspend fun reset(id: String)
 
+    @Query("UPDATE " + NovelFileInfo.TABLE_NAME + " SET isFavorite = :isFavorite WHERE id = :id")
+    suspend fun setFavorite(id: String, isFavorite: Boolean)
+
+    @Query("DELETE FROM " + NovelFileInfo.TABLE_NAME + " WHERE path = :path")
+    suspend fun deleteByPath(path: String)
+
     @Query("DELETE FROM " + NovelFileInfo.TABLE_NAME)
     suspend fun deleteAll()
 }

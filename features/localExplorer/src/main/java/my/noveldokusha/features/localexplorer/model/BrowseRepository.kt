@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import my.noveldokusha.core.utils.getThenUpdateFlow
 import my.noveldokusha.feature.local_database.AppDatabase
+import my.noveldokusha.feature.local_database.tables.localexplorer.NovelFileInfo
 import my.noveldokusha.features.localexplorer.BrowseModule
 import my.noveldokusha.features.localexplorer.extractor.utils.extractor
 import my.noveldokusha.features.localexplorer.FileManager
@@ -58,6 +59,9 @@ class BrowseRepository @Inject constructor(
                     .asFlow()
                     .map { selectedFile ->
                         val fileInfo = selectedFile.extractor.novelInfo
+                        // Read right before writing so a favorite toggled mid-scan is kept.
+                        fileInfo.isFavorite =
+                            db.novelFilesDao().getNovelFileInfo(fileInfo.id)?.isFavorite ?: false
                         db.novelFilesDao().upsert(fileInfo)
                         Browsable(selectedFile, fileInfo)
                     }
@@ -76,4 +80,15 @@ class BrowseRepository @Inject constructor(
     }
 
     override suspend fun getParentDirectories(): List<File> = FileManager.getParents()
+
+    suspend fun setFavorite(novelFileInfo: NovelFileInfo, isFavorite: Boolean) {
+        db.novelFilesDao().setFavorite(novelFileInfo.id, isFavorite)
+    }
+
+    suspend fun deleteFile(novelFileInfo: NovelFileInfo): Boolean {
+        val file = File(novelFileInfo.path)
+        val deleted = !file.exists() || file.delete()
+        if (deleted) db.novelFilesDao().deleteByPath(novelFileInfo.path)
+        return deleted
+    }
 }

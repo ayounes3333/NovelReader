@@ -69,6 +69,7 @@ fun SettingsScreen() {
                 state = viewModel.state,
                 onFollowSystem = viewModel::onFollowSystemChange,
                 onThemeSelected = viewModel::onThemeChange,
+                onAccentColorSelected = viewModel::onAccentColorChange,
                 onCleanDatabase = viewModel::cleanDatabase,
                 onCleanImageFolder = viewModel::cleanImagesFolder,
                 onBackupData = onBackupCreate(),

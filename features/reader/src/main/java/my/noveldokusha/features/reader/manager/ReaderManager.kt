@@ -18,7 +18,15 @@ internal class ReaderManager @Inject constructor(
         chapterUrl: String,
     ): ReaderSession {
         val currentSession = session
-        if (currentSession != null && bookUrl == currentSession.bookUrl && chapterUrl == currentSession.currentChapter.chapterUrl) {
+        val sameChapter = currentSession != null &&
+                bookUrl == currentSession.bookUrl &&
+                chapterUrl == currentSession.currentChapter.chapterUrl
+        // While narrating in the background the live chapter may have advanced past the
+        // one stored in the DB, so reuse the session for the same book regardless.
+        val narratingSameBook = currentSession != null &&
+                bookUrl == currentSession.bookUrl &&
+                currentSession.readerTextToSpeech.isActive.value
+        if (currentSession != null && (sameChapter || narratingSameBook)) {
             readerViewHandlersActions.introScrollToCurrentChapter = true
             return currentSession
         }

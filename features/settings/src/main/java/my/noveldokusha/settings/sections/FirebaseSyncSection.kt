@@ -31,8 +31,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.launch
-import my.noveldoksuha.coreui.theme.ColorAccent
-import my.noveldoksuha.coreui.theme.textPadding
 import my.noveldokusha.settings.viewmodels.FirebaseSyncViewModel
 import my.noveldokusha.tooling.firebase_sync.auth.AuthState
 import my.noveldokusha.tooling.firebase_sync.sync.SyncState
@@ -53,13 +51,6 @@ fun FirebaseSyncSection(
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = "Library Sync",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.textPadding(),
-            color = ColorAccent
-        )
-
         if (isSyncAvailable) {
             FirebaseSyncContent()
         } else {

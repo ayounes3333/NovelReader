@@ -3,9 +3,7 @@ package my.noveldokusha.settings
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
@@ -19,9 +17,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import my.noveldoksuha.coreui.theme.AppSpacing
 import my.noveldoksuha.coreui.theme.InternalTheme
@@ -29,6 +24,7 @@ import my.noveldoksuha.coreui.theme.PreviewThemes
 import my.noveldoksuha.coreui.theme.Themes
 import my.noveldokusha.settings.sections.AppUpdates
 import my.noveldokusha.settings.sections.LibraryAutoUpdate
+import my.noveldokusha.core.appPreferences.AppPreferences
 import my.noveldokusha.settings.sections.ScraperTestingSection
 import my.noveldokusha.settings.sections.SettingsAi
 import my.noveldokusha.settings.sections.SettingsBackup
@@ -44,6 +40,7 @@ internal fun SettingsScreenBody(
     modifier: Modifier = Modifier,
     onFollowSystem: (Boolean) -> Unit,
     onThemeSelected: (Themes) -> Unit,
+    onAccentColorSelected: (Int) -> Unit,
     onCleanDatabase: () -> Unit,
     onCleanImageFolder: () -> Unit,
     onBackupData: () -> Unit,
@@ -73,8 +70,10 @@ internal fun SettingsScreenBody(
         SettingsTheme(
             currentFollowSystem = state.followsSystemTheme.value,
             currentTheme = state.currentTheme.value,
+            currentAccentColor = state.accentColor.value,
             onFollowSystemChange = onFollowSystem,
-            onCurrentThemeChange = onThemeSelected
+            onCurrentThemeChange = onThemeSelected,
+            onAccentColorChange = onAccentColorSelected
         )
         HorizontalDivider()
         SettingsData(
@@ -128,17 +127,6 @@ internal fun SettingsScreenBody(
             onTestIndividualDatabase = onTestIndividualDatabase
         )
         Spacer(modifier = Modifier.height(AppSpacing.scrollableContentBottomPadding))
-        Text(
-            text = "(°.°)",
-            modifier = Modifier
-                .padding(20.dp)
-                .fillMaxWidth(),
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(120.dp))
     }
 }
 
@@ -154,6 +142,7 @@ private fun Preview() {
                 state = SettingsScreenState(
                     followsSystemTheme = remember { derivedStateOf { true } },
                     currentTheme = theme,
+                    accentColor = remember { mutableIntStateOf(AppPreferences.DEFAULT_ACCENT_COLOR) },
                     databaseSize = remember { mutableStateOf("1 MB") },
                     imageFolderSize = remember { mutableStateOf("10 MB") },
                     isTranslationSettingsVisible = remember { mutableStateOf(true) },
@@ -175,6 +164,7 @@ private fun Preview() {
                 ),
                 onFollowSystem = { },
                 onThemeSelected = { },
+                onAccentColorSelected = { },
                 onCleanDatabase = { },
                 onCleanImageFolder = { },
                 onBackupData = { },

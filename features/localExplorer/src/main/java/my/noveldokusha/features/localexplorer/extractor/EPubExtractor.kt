@@ -52,7 +52,7 @@ class EPubExtractor(private val file: File) : BaseExtractor(file) {
                         if (eventType == XmlPullParser.START_TAG) {
                             when (xpp.name) {
                                 "dc:title", "dcns:title" -> {
-                                    title = if (title.isNotEmpty()) {
+                                    title = if (title.isEmpty()) {
                                         xpp.nextText()
                                     } else {
                                         title + " - " + xpp.nextText()

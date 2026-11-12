@@ -6,7 +6,8 @@ import android.view.KeyEvent
 import my.noveldokusha.features.reader.features.ReaderTextToSpeech
 
 internal class NarratorMediaControlsCallback(
-    private val readerTextToSpeech: ReaderTextToSpeech
+    private val readerTextToSpeech: ReaderTextToSpeech,
+    private val onStopRequested: () -> Unit,
 ) : MediaSessionCompat.Callback() {
 
     override fun onMediaButtonEvent(mediaButtonEvent: Intent?): Boolean {
@@ -26,6 +27,10 @@ internal class NarratorMediaControlsCallback(
                 }
                 KeyEvent.KEYCODE_MEDIA_PAUSE -> {
                     onPause()
+                    return true
+                }
+                KeyEvent.KEYCODE_MEDIA_STOP -> {
+                    onStop()
                     return true
                 }
                 KeyEvent.KEYCODE_MEDIA_PLAY -> {
@@ -56,6 +61,11 @@ internal class NarratorMediaControlsCallback(
 
     override fun onPause() {
         readerTextToSpeech.state.setPlaying(false)
+    }
+
+    override fun onStop() {
+        readerTextToSpeech.state.setPlaying(false)
+        onStopRequested()
     }
 
     override fun onSkipToNext() {

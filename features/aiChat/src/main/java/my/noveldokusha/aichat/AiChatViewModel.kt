@@ -55,6 +55,9 @@ internal data class ToolUseCall(val name: String, val argsSummary: String)
 /** What the assistant is doing right now, for the progress indicator. */
 internal sealed interface ChatActivity {
     data object Thinking : ChatActivity
+
+    /** Tokens are arriving; the partial answer is in `streamingText`. */
+    data object Streaming : ChatActivity
     data class Tool(val name: String) : ChatActivity
 
     /** Step budget exhausted; waiting for the user to decide. */
@@ -84,6 +87,10 @@ internal class AiChatViewModel @Inject constructor(
     var error by mutableStateOf<String?>(null)
         private set
     var fallbackNotice by mutableStateOf(false)
+        private set
+
+    /** Assistant text streamed for the in-flight model call; empty when idle. */
+    var streamingText by mutableStateOf("")
         private set
     val webSearchEnabled: State<Boolean> = appPreferences.AI_CHAT_WEB_SEARCH_ENABLED.state(viewModelScope)
     val maxSteps: State<Int> = appPreferences.AI_CHAT_MAX_STEPS.state(viewModelScope)
@@ -127,17 +134,29 @@ internal class AiChatViewModel @Inject constructor(
                     text = message,
                     onEvent = { event ->
                         when (event) {
-                            is AiAgentEvent.ToolCallStarted -> activity = ChatActivity.Tool(event.call.name)
+                            is AiAgentEvent.ModelCallStarted -> {
+                                streamingText = ""
+                                activity = ChatActivity.Thinking
+                            }
+                            is AiAgentEvent.ToolCallStarted -> {
+                                streamingText = ""
+                                activity = ChatActivity.Tool(event.call.name)
+                            }
                             is AiAgentEvent.ToolCallFinished -> activity = ChatActivity.Thinking
                             is AiAgentEvent.FallbackToTextProtocol -> fallbackNotice = true
                         }
                     },
                     onStepLimit = ::askStepLimit,
+                    onDelta = { delta ->
+                        streamingText += delta
+                        if (activity is ChatActivity.Thinking) activity = ChatActivity.Streaming
+                    },
                 )
                 if (result is Response.Error) error = result.message
             } finally {
                 stepLimitDecision = null
                 activity = null
+                streamingText = ""
             }
         }
     }

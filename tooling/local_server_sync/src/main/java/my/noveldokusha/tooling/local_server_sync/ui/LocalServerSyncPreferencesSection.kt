@@ -7,30 +7,30 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material3.ListItem
+import my.noveldoksuha.coreui.theme.Success500
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -62,303 +62,165 @@ fun LocalServerSyncPreferencesSection(
     val autoSyncEnabled by viewModel.autoSyncEnabled.collectAsState()
     val serverUrls by viewModel.serverUrls.collectAsState()
     val homeBssids by viewModel.homeBssids.collectAsState()
+    val onPrimary = MaterialTheme.colorScheme.onPrimary
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
 
-    Card(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Local Server Sync",
-                    style = MaterialTheme.typography.titleMedium
+    Column(modifier = modifier.fillMaxWidth()) {
+        // Connection / account row
+        when (val state = authState) {
+            is AuthState.Authenticated -> {
+                ListItem(
+                    headlineContent = { Text("Connected as ${state.username}") },
+                    supportingContent = { Text(state.email) },
+                    leadingContent = {
+                        Icon(Icons.Default.AccountCircle, null, tint = onPrimary)
+                    },
+                    trailingContent = {
+                        Icon(Icons.Filled.CheckCircle, "Connected", tint = Success500)
+                    }
                 )
-
-                // Connection status indicator
-                when (authState) {
-                    is AuthState.Authenticated -> {
-                        Icon(
-                            imageVector = Icons.Filled.CheckCircle,
-                            contentDescription = "Connected",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    is AuthState.Loading -> {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp
-                        )
-                    }
-                    else -> {
-                        Icon(
-                            imageVector = Icons.Filled.RadioButtonUnchecked,
-                            contentDescription = "Not connected",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
             }
-
-            // Connection info
-            when (authState) {
-                is AuthState.Authenticated -> {
-                    Text(
-                        text = "Connected as: ${(authState as AuthState.Authenticated).username}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Email: ${(authState as AuthState.Authenticated).email}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                is AuthState.Loading -> {
-                    Text(
-                        text = "Connecting...",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                else -> {
-                    Text(
-                        text = "Not connected to local server",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            // Sync status
-            when (syncState) {
-                is SyncState.Syncing -> {
-                    LinearProgressIndicator(
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text(
-                        text = "Syncing: ${(syncState as SyncState.Syncing).operation}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-                is SyncState.Success -> {
-                    Text(
-                        text = "Last sync: ${(syncState as SyncState.Success).timestamp}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                is SyncState.Error -> {
-                    Text(
-                        text = "Sync error: ${(syncState as SyncState.Error).message}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-                else -> {
-                    // No sync status to show
-                }
-            }
-
-            // Auto-sync toggle (only when authenticated)
-            if (authState is AuthState.Authenticated) {
-                HorizontalDivider()
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Auto-sync on WiFi",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = "Automatically sync when connected to a network with the server",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+            is AuthState.Loading -> {
+                ListItem(
+                    headlineContent = { Text("Connecting…") },
+                    leadingContent = {
+                        Icon(Icons.Default.AccountCircle, null, tint = onPrimary)
+                    },
+                    trailingContent = {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     }
+                )
+            }
+            else -> {
+                ListItem(
+                    headlineContent = { Text("Connect to local server") },
+                    supportingContent = { Text("Sign in to sync your library with your own server") },
+                    leadingContent = {
+                        Icon(Icons.AutoMirrored.Filled.Login, null, tint = onPrimary)
+                    },
+                    modifier = Modifier.clickable { showAuthDialog = true }
+                )
+            }
+        }
+
+        if (authState is AuthState.Authenticated) {
+            // Sync now
+            ListItem(
+                headlineContent = { Text("Sync now") },
+                supportingContent = {
+                    when (val s = syncState) {
+                        is SyncState.Syncing -> Column {
+                            Text("Syncing: ${s.operation}")
+                            LinearProgressIndicator(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 6.dp)
+                            )
+                        }
+                        is SyncState.Success -> Text("Last sync: ${s.timestamp}")
+                        is SyncState.Error -> Text(
+                            text = "Sync error: ${s.message}",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        else -> Text("Upload progress and pull new chapters")
+                    }
+                },
+                leadingContent = {
+                    Icon(Icons.Filled.Sync, null, tint = onPrimary)
+                },
+                trailingContent = if (syncState is SyncState.Syncing) {
+                    { CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp) }
+                } else null,
+                modifier = Modifier.clickable(enabled = syncState !is SyncState.Syncing) {
+                    viewModel.syncLibrary()
+                }
+            )
+            // Full sync
+            ListItem(
+                headlineContent = { Text("Full sync") },
+                supportingContent = { Text("Re-download the whole library from the server") },
+                leadingContent = {
+                    Icon(Icons.Filled.CloudDownload, null, tint = onPrimary)
+                },
+                modifier = Modifier.clickable(enabled = syncState !is SyncState.Syncing) {
+                    viewModel.syncComplete()
+                }
+            )
+            // Auto sync
+            ListItem(
+                headlineContent = { Text("Auto-sync on Wi-Fi") },
+                supportingContent = { Text("Automatically sync when connected to a network with the server") },
+                leadingContent = {
+                    Icon(Icons.Filled.Wifi, null, tint = onPrimary)
+                },
+                trailingContent = {
                     Switch(
                         checked = autoSyncEnabled,
                         onCheckedChange = { viewModel.setAutoSyncEnabled(it) }
                     )
-                }
-
-                // Server URLs section
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Server addresses",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    IconButton(onClick = { showAddUrlDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = "Add server URL"
-                        )
-                    }
-                }
-
-                if (serverUrls.isEmpty()) {
-                    Text(
-                        text = "No server addresses configured",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    serverUrls.forEach { url ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = url,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.weight(1f)
-                            )
-                            IconButton(
-                                onClick = { viewModel.removeServerUrl(url) },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Close,
-                                    contentDescription = "Remove",
-                                    modifier = Modifier.size(16.dp)
-                                )
+                },
+                modifier = Modifier.clickable { viewModel.setAutoSyncEnabled(!autoSyncEnabled) }
+            )
+            // Server addresses
+            ListItem(
+                headlineContent = { Text("Server addresses") },
+                supportingContent = {
+                    if (serverUrls.isEmpty()) {
+                        Text("No server addresses configured")
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            serverUrls.forEach { url ->
+                                RemovableRow(text = url, onRemove = { viewModel.removeServerUrl(url) })
                             }
                         }
                     }
+                },
+                leadingContent = {
+                    Icon(Icons.Filled.Dns, null, tint = onPrimary)
+                },
+                trailingContent = {
+                    IconButton(onClick = { showAddUrlDialog = true }) {
+                        Icon(Icons.Filled.Add, "Add server URL", tint = onPrimary)
+                    }
                 }
-
-                // Home WiFi BSSIDs (gate for bulk sync)
-                HorizontalDivider()
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Home WiFi networks",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+            )
+            // Home Wi-Fi networks
+            ListItem(
+                headlineContent = { Text("Home Wi-Fi networks") },
+                supportingContent = {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
                             text = if (homeBssids.isEmpty())
-                                "Any WiFi will trigger bulk sync. Add the current network to restrict."
+                                "Any Wi-Fi will trigger bulk sync. Add the current network to restrict."
                             else
-                                "Bulk sync runs only when connected to a listed BSSID.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                "Bulk sync runs only when connected to a listed network.",
+                            color = muted
                         )
+                        homeBssids.forEach { bssid ->
+                            RemovableRow(text = bssid, onRemove = { viewModel.removeHomeBssid(bssid) })
+                        }
                     }
+                },
+                leadingContent = {
+                    Icon(Icons.Filled.Home, null, tint = onPrimary)
+                },
+                trailingContent = {
                     IconButton(onClick = { showAddBssidDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = "Add home WiFi"
-                        )
+                        Icon(Icons.Filled.Add, "Add home Wi-Fi", tint = onPrimary)
                     }
                 }
-
-                homeBssids.forEach { bssid ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = bssid,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.weight(1f)
-                        )
-                        IconButton(
-                            onClick = { viewModel.removeHomeBssid(bssid) },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Close,
-                                contentDescription = "Remove",
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
+            )
+            // Sign out
+            ListItem(
+                headlineContent = { Text("Sign out") },
+                supportingContent = { Text("You can sign back in anytime") },
+                leadingContent = {
+                    Icon(Icons.AutoMirrored.Filled.Logout, null, tint = onPrimary)
+                },
+                modifier = Modifier.clickable(enabled = syncState !is SyncState.Syncing) {
+                    viewModel.signOut()
                 }
-            }
-
-            // Action buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                when (authState) {
-                    is AuthState.Authenticated -> {
-                        Button(
-                            onClick = { viewModel.syncLibrary() },
-                            enabled = syncState !is SyncState.Syncing,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Sync,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Sync")
-                        }
-
-                        OutlinedButton(
-                            onClick = { viewModel.syncComplete() },
-                            enabled = syncState !is SyncState.Syncing,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.CloudDownload,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Full Sync")
-                        }
-
-                        OutlinedButton(
-                            onClick = { viewModel.signOut() },
-                            enabled = syncState !is SyncState.Syncing
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Logout,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                    else -> {
-                        Button(
-                            onClick = { showAuthDialog = true },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Login,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Connect")
-                        }
-                    }
-                }
-            }
+            )
         }
     }
 
@@ -480,5 +342,23 @@ fun LocalServerSyncPreferencesSection(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun RemovableRow(text: String, onRemove: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.weight(1f)
+        )
+        IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
+            Icon(Icons.Filled.Close, "Remove", modifier = Modifier.size(16.dp))
+        }
     }
 }

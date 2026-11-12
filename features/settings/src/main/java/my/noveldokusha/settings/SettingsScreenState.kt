@@ -12,6 +12,7 @@ data class SettingsScreenState(
     val imageFolderSize: MutableState<String>,
     val followsSystemTheme: State<Boolean>,
     val currentTheme: State<Themes>,
+    val accentColor: State<Int>,
     val isTranslationSettingsVisible: State<Boolean>,
     val translationModelsStates: SnapshotStateList<TranslationModelState>,
     val updateAppSetting: UpdateApp,

@@ -1,6 +1,8 @@
 package my.noveldokusha.tooling.ai_engine.engine
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import my.noveldokusha.core.Response
 import okhttp3.OkHttpClient
@@ -47,6 +49,44 @@ class AiHttpClient @Inject constructor() {
         } catch (e: Exception) {
             Response.Error(
                 message = "Connection to AI provider failed: ${e.message ?: e.javaClass.simpleName}",
+                exception = e as? IOException ?: IOException(e)
+            )
+        }
+    }
+
+    /**
+     * Executes [request] and feeds each non-blank response line to [onLine]
+     * as it arrives (server-sent events). HTTP errors are mapped like [execute].
+     * Exceptions thrown by [onLine] abort the stream and surface as an error.
+     */
+    suspend fun executeStream(
+        request: Request,
+        onLine: suspend (String) -> Unit,
+    ): Response<Unit> = withContext(Dispatchers.IO) {
+        try {
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    val body = response.body?.string().orEmpty()
+                    return@withContext Response.Error(
+                        message = errorMessage(response.code, body, response.header("Retry-After")),
+                        exception = IOException("HTTP ${response.code}")
+                    )
+                }
+                val source = response.body?.source()
+                    ?: return@withContext Response.Error("Empty response", IOException("empty body"))
+                while (true) {
+                    ensureActive()
+                    val line = source.readUtf8Line() ?: break
+                    if (line.isNotBlank()) onLine(line)
+                }
+                Response.Success(Unit)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Response.Error(
+                message = e.message?.takeIf { it.isNotBlank() }
+                    ?: "Connection to AI provider failed: ${e.javaClass.simpleName}",
                 exception = e as? IOException ?: IOException(e)
             )
         }

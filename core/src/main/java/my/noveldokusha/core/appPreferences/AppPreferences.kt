@@ -46,6 +46,11 @@ class AppPreferences @Inject constructor(
     val THEME_FOLLOW_SYSTEM = object : Preference<Boolean>("THEME_FOLLOW_SYSTEM") {
         override var value by SharedPreference_Boolean(name, preferences, true)
     }
+
+    /** ARGB accent color used across the app. Defaults to the brand indigo. */
+    val THEME_ACCENT_COLOR = object : Preference<Int>("THEME_ACCENT_COLOR") {
+        override var value by SharedPreference_Int(name, preferences, DEFAULT_ACCENT_COLOR)
+    }
     val READER_FONT_SIZE = object : Preference<Float>("READER_FONT_SIZE") {
         override var value by SharedPreference_Float(name, preferences, 14f)
     }
@@ -282,5 +287,9 @@ class AppPreferences @Inject constructor(
 
         override fun component1(): T = value
         override fun component2() = ::value::set
+    }
+
+    companion object {
+        const val DEFAULT_ACCENT_COLOR: Int = 0xFF6650A4.toInt()
     }
 }

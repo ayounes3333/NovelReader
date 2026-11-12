@@ -24,13 +24,22 @@ import androidx.compose.material.icons.outlined.ColorLens
 import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Translate
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.setValue
+import my.noveldoksuha.coreui.theme.ColorAccent
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -114,6 +123,13 @@ internal fun ReaderScreen(
                             false -> Modifier
                         }
                     ) {
+                        val toggleOrSet = { type: Type ->
+                            state.settings.selectedSetting.value =
+                                when (state.settings.selectedSetting.value) {
+                                    type -> Type.None
+                                    else -> type
+                                }
+                        }
                         TopAppBar(
                             colors = TopAppBarDefaults.topAppBarColors(
                                 containerColor = MaterialTheme.colorApp.tintedSurface,
@@ -134,48 +150,81 @@ internal fun ReaderScreen(
                                 }
                             },
                             actions = {
-                                val toggleOrSet = { type: Type ->
-                                    state.settings.selectedSetting.value = when (state.settings.selectedSetting.value) {
-                                        type -> Type.None
-                                        else -> type
-                                    }
+                                var menuExpanded by remember { mutableStateOf(false) }
+                                IconButton(onClick = { menuExpanded = true }) {
+                                    Icon(Icons.Filled.MoreVert, stringResource(R.string.more))
                                 }
-                                if (state.settings.liveTranslation.isAvailable) ActionIconItem(
-                                    settingType = Type.LiveTranslation,
-                                    textId = R.string.translator,
-                                    icon = Icons.Outlined.Translate,
-                                    onClick = toggleOrSet,
-                                )
-                                if (state.settings.ai.isAvailable.value) ActionIconItem(
-                                    settingType = Type.Ai,
-                                    textId = R.string.ai_tools,
-                                    icon = Icons.Outlined.AutoAwesome,
-                                    onClick = toggleOrSet,
-                                )
-                                if (state.settings.ai.isAvailable.value) IconButton(onClick = onOpenAiChat) {
-                                    Icon(Icons.Outlined.Forum, stringResource(R.string.ai_chat_open))
-                                }
-                                ActionIconItem(
-                                    settingType = Type.TextToSpeech,
-                                    textId = R.string.voice_reader,
-                                    icon = Icons.Filled.RecordVoiceOver,
-                                    onClick = toggleOrSet,
-                                )
-                                ActionIconItem(
-                                    settingType = Type.Style,
-                                    textId = R.string.style,
-                                    icon = Icons.Outlined.ColorLens,
-                                    onClick = toggleOrSet,
-                                )
-                                IconButton(onClick = onOpenChapterInWeb) {
-                                    Icon(Icons.Filled.Public, null)
+                                DropdownMenu(
+                                    expanded = menuExpanded,
+                                    onDismissRequest = { menuExpanded = false }
+                                ) {
+                                    if (state.settings.ai.isAvailable.value) DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.ai_chat_open)) },
+                                        leadingIcon = { Icon(Icons.Outlined.Forum, null) },
+                                        onClick = {
+                                            menuExpanded = false
+                                            onOpenAiChat()
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.open_in_web)) },
+                                        leadingIcon = { Icon(Icons.Filled.Public, null) },
+                                        onClick = {
+                                            menuExpanded = false
+                                            onOpenChapterInWeb()
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.more)) },
+                                        leadingIcon = { Icon(Icons.Outlined.MoreHoriz, null) },
+                                        onClick = {
+                                            menuExpanded = false
+                                            toggleOrSet(Type.More)
+                                        }
+                                    )
                                 }
                             }
                         )
-                        Column(
+                        // Reader tools: evenly spaced toggles under the title
+                        Row(
                             modifier = Modifier
-                                .padding(bottom = 8.dp)
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            val selected = state.settings.selectedSetting.value
+                            if (state.settings.liveTranslation.isAvailable) ReaderToolItem(
+                                selected = selected == Type.LiveTranslation,
+                                textId = R.string.translator,
+                                icon = Icons.Outlined.Translate,
+                                onClick = { toggleOrSet(Type.LiveTranslation) },
+                            )
+                            if (state.settings.ai.isAvailable.value) ReaderToolItem(
+                                selected = selected == Type.Ai,
+                                textId = R.string.ai_tools,
+                                icon = Icons.Outlined.AutoAwesome,
+                                onClick = { toggleOrSet(Type.Ai) },
+                            )
+                            ReaderToolItem(
+                                selected = selected == Type.TextToSpeech,
+                                textId = R.string.voice_reader,
+                                icon = Icons.Filled.RecordVoiceOver,
+                                onClick = { toggleOrSet(Type.TextToSpeech) },
+                            )
+                            ReaderToolItem(
+                                selected = selected == Type.Style,
+                                textId = R.string.style,
+                                icon = Icons.Outlined.ColorLens,
+                                onClick = { toggleOrSet(Type.Style) },
+                            )
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 6.dp, bottom = 8.dp)
                                 .padding(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
                             Text(
                                 text = stringResource(
@@ -191,6 +240,7 @@ internal fun ReaderScreen(
                                     state.readerInfo.chapterPercentageProgress.value
                                 ),
                                 style = MaterialTheme.typography.labelMedium,
+                                color = ColorAccent,
                             )
                         }
                         HorizontalDivider()
@@ -229,22 +279,6 @@ internal fun ReaderScreen(
                 }
             }
         }
-    )
-}
-
-@Composable
-private fun RowScope.SettingIconItem(
-    currentType: Type,
-    settingType: Type,
-    @StringRes textId: Int,
-    icon: ImageVector,
-    onClick: (type: Type) -> Unit,
-) {
-    NavigationBarItem(
-        selected = currentType == settingType,
-        onClick = { onClick(settingType) },
-        icon = { Icon(icon, null) },
-        label = { Text(text = stringResource(id = textId)) }
     )
 }
 
@@ -416,13 +450,29 @@ private class PreviewDataProvider : PreviewParameterProvider<PreviewDataProvider
 }
 
 @Composable
-private fun ActionIconItem(
-    settingType: Type,
+private fun RowScope.ReaderToolItem(
+    selected: Boolean,
     @StringRes textId: Int,
     icon: ImageVector,
-    onClick: (type: Type) -> Unit,
+    onClick: () -> Unit,
 ) {
-    IconButton(onClick = { onClick(settingType) }) {
-        Icon(icon, stringResource(id = textId))
+    val contentColor = if (selected) ColorAccent else MaterialTheme.colorScheme.onSurfaceVariant
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .weight(1f)
+            .clip(MaterialTheme.shapes.medium)
+            .background(if (selected) ColorAccent.copy(alpha = 0.14f) else Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp)
+    ) {
+        Icon(icon, contentDescription = null, tint = contentColor)
+        Text(
+            text = stringResource(id = textId),
+            style = MaterialTheme.typography.labelSmall,
+            color = contentColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }

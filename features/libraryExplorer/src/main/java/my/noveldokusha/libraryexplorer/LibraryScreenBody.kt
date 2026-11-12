@@ -31,11 +31,13 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import my.noveldoksuha.coreui.components.CollapsibleDivider
+import my.noveldoksuha.coreui.theme.ColorAccent
 import my.noveldoksuha.coreui.theme.colorApp
 import my.noveldokusha.core.domain.LibraryCategory
 import my.noveldokusha.feature.local_database.BookWithContext
@@ -138,12 +140,11 @@ internal fun LibraryScreenBody(
                             text = {
                                 Text(
                                     text = title,
-                                    color = if (selected)
-                                        MaterialTheme.colorScheme.primary
-                                    else
-                                        MaterialTheme.colorScheme.onPrimary
+                                    color = if (selected) ColorAccent
+                                    else MaterialTheme.colorScheme.onPrimary,
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
                                 )
-                                   },
+                            },
                             onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
                         )
                     }
